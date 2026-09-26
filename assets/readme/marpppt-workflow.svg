@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="390" viewBox="0 0 1280 390" role="img" aria-labelledby="title desc">
+  <title id="title">MarpPPT workflow</title>
+  <desc id="desc">Markdown and image attachments flow through MarpPPT planning, layout, and validation to create an editable PowerPoint deck.</desc>
+  <defs>
+    <linearGradient id="backdrop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7F9FF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </linearGradient>
+    <linearGradient id="engine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#315BFF"/>
+      <stop offset="1" stop-color="#6148D8"/>
+    </linearGradient>
+    <linearGradient id="slide" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F4F7FF"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#233B79" flood-opacity="0.12"/>
+    </filter>
+    <filter id="smallShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#233B79" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="390" rx="28" fill="url(#backdrop)"/>
+  <circle cx="1130" cy="34" r="120" fill="#DDE8FF" opacity="0.42"/>
+  <circle cx="1120" cy="358" r="142" fill="#E2DEFF" opacity="0.38"/>
+
+  <text x="54" y="48" fill="#53627F" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13" font-weight="700" letter-spacing="2.2">A CLEAR PATH FROM SOURCE TO SLIDES</text>
+
+  <!-- Source card -->
+  <g filter="url(#shadow)">
+    <rect x="48" y="78" width="300" height="254" rx="22" fill="#FFFFFF"/>
+  </g>
+  <rect x="72" y="104" width="48" height="58" rx="10" fill="#E9EEFF"/>
+  <path d="M84 117h18M84 126h24M84 135h17M84 144h22" stroke="#5268D9" stroke-width="3" stroke-linecap="round"/>
+  <text x="135" y="121" fill="#18243B" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="17" font-weight="700">Markdown source</text>
+  <text x="135" y="145" fill="#697792" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13">Headings · facts · notes</text>
+  <rect x="72" y="181" width="252" height="1" fill="#E9EDF5"/>
+  <text x="74" y="211" fill="#697792" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12" font-weight="700" letter-spacing="1">PLUS YOUR IMAGES</text>
+  <rect x="72" y="226" width="110" height="76" rx="12" fill="#E9F3FF"/>
+  <circle cx="151" cy="243" r="8" fill="#F7C869"/>
+  <path d="M82 290l28-29 18 17 13-12 31 24z" fill="#91B8F4"/>
+  <path d="M82 290l24-20 16 13 13-11 27 18z" fill="#6D8FD8"/>
+  <rect x="194" y="232" width="130" height="28" rx="14" fill="#F2F4F9"/>
+  <circle cx="210" cy="246" r="5" fill="#7786A3"/>
+  <text x="222" y="250" fill="#53627F" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12">Conversation brief</text>
+  <rect x="194" y="270" width="118" height="28" rx="14" fill="#F2F4F9"/>
+  <circle cx="210" cy="284" r="5" fill="#7786A3"/>
+  <text x="222" y="288" fill="#53627F" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12">Image attachments</text>
+
+  <!-- Connector -->
+  <path d="M365 204h58" stroke="#8DA0CA" stroke-width="3" stroke-linecap="round"/>
+  <path d="m414 194 11 10-11 10" fill="none" stroke="#8DA0CA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- MarpPPT engine -->
+  <g filter="url(#shadow)">
+    <rect x="444" y="94" width="388" height="222" rx="24" fill="url(#engine)"/>
+  </g>
+  <rect x="476" y="122" width="46" height="46" rx="14" fill="#FFFFFF" opacity="0.16"/>
+  <path d="M487 155v-21l10 9 10-9v21" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="536" y="143" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="25" font-weight="750">MarpPPT</text>
+  <text x="478" y="194" fill="#E5E9FF" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="14">Plan  ·  design  ·  validate</text>
+  <rect x="478" y="218" width="320" height="1" fill="#FFFFFF" opacity="0.22"/>
+  <circle cx="492" cy="251" r="5" fill="#A7F1D0"/>
+  <text x="507" y="256" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13">Source-aware content and layout rules</text>
+  <circle cx="492" cy="281" r="5" fill="#A7F1D0"/>
+  <text x="507" y="286" fill="#FFFFFF" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="13">Native PowerPoint objects</text>
+
+  <!-- Connector -->
+  <path d="M849 204h58" stroke="#8DA0CA" stroke-width="3" stroke-linecap="round"/>
+  <path d="m898 194 11 10-11 10" fill="none" stroke="#8DA0CA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Output card -->
+  <g filter="url(#shadow)">
+    <rect x="930" y="78" width="302" height="254" rx="22" fill="#FFFFFF"/>
+  </g>
+  <rect x="954" y="102" width="254" height="178" rx="13" fill="url(#slide)" stroke="#E3E8F3"/>
+  <rect x="974" y="121" width="82" height="8" rx="4" fill="#4F61DB"/>
+  <rect x="974" y="139" width="142" height="6" rx="3" fill="#CBD3E4"/>
+  <rect x="974" y="152" width="116" height="6" rx="3" fill="#CBD3E4"/>
+  <rect x="974" y="178" width="100" height="78" rx="9" fill="#E7EDFF"/>
+  <path d="M985 245l24-25 15 12 11-10 28 23z" fill="#97A9E9"/>
+  <rect x="1086" y="178" width="101" height="10" rx="5" fill="#303D60"/>
+  <rect x="1086" y="197" width="86" height="6" rx="3" fill="#C7CFDE"/>
+  <rect x="1086" y="210" width="96" height="6" rx="3" fill="#C7CFDE"/>
+  <rect x="1086" y="223" width="74" height="6" rx="3" fill="#C7CFDE"/>
+  <rect x="1086" y="241" width="46" height="15" rx="7.5" fill="#E3F7EF"/>
+  <text x="1095" y="252" fill="#20825B" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="8" font-weight="700">EDITABLE</text>
+  <text x="954" y="308" fill="#18243B" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15" font-weight="700">PowerPoint you can edit</text>
+</svg>

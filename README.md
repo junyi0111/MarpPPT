@@ -15,7 +15,7 @@
 
 <p align="center">
   <a href="README.zh-TW.md">繁體中文</a> ·
-  <a href="#start-in-codex">Quick start</a> ·
+  <a href="#install-in-codex-desktop">Quick start</a> ·
   <a href="#support-matrix">Support</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="SECURITY.md">Security</a>
@@ -40,20 +40,28 @@ Its quality goals are **clear information, reliable layout, repeatable productio
 - **Useful deliverables:** returns editable `.pptx` and `.marp.md` files, plus an image bundle when needed.
 - **Source checks:** includes a local PDF text extraction helper for optional source and page-number verification.
 
-## Install and use in Codex
+## Install in Codex desktop
 
-MarpPPT is distributed through a local plugin marketplace. The first install requires Git, Node.js 22 or later, npm, and the Codex CLI. Run:
+The following path targets **Codex desktop on macOS**. You need the desktop app installed and signed in, access to GitHub and nodejs.org, and enough disk space for dependencies. **Git, Node.js, npm, and a `codex` command on your terminal PATH are not prerequisites.** The installer downloads and verifies Node.js, builds the local plugin, and uses the Codex executable bundled with the desktop app. You can [inspect the installer](scripts/install-codex-macos.sh) before running it.
 
-```bash
-git clone https://github.com/junyi0111/MarpPPT.git
-cd MarpPPT
-npm ci
-npm run build
-codex plugin marketplace add .
-codex plugin add markdown-to-editable-pptx@marpppt
+### Option 1: ask the Codex agent to install it
+
+Start a new Codex desktop conversation and paste:
+
+```text
+Install the MarpPPT plugin from https://github.com/junyi0111/MarpPPT on this macOS computer. First inspect scripts/install-codex-macos.sh in that repository, then run it locally. Confirm that the marpppt marketplace and markdown-to-editable-pptx@marpppt plugin are installed and that the MCP's Node.js executable exists and starts. Report any permission or network block instead of claiming success. Finally remind me to quit and reopen Codex and start a new conversation with $marp-ppt.
 ```
 
-Restart Codex, start a new conversation, attach the Markdown and images, then invoke `$marp-ppt` with your presentation request. MCP outputs are stored under `~/.marpppt/artifacts/` by default. To choose another location, set `PPTX_OUTPUT_ROOT` to an absolute path before starting Codex.
+### Option 2: paste into macOS Terminal
+
+```bash
+set -o pipefail
+curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/install-codex-macos.sh | /bin/bash
+```
+
+After `Installed.` appears, **quit and reopen Codex completely**, start a new conversation, attach your `.md` file and images, and invoke `$marp-ppt` with your presentation request. Confirm **MarpPPT** is enabled in the desktop app's Plugins view. MCP outputs are stored under `~/.marpppt/artifacts/` by default. Set `PPTX_OUTPUT_ROOT` to an absolute path before launching Codex to change the output location. You can set an absolute `MARPPPT_INSTALL_ROOT` before installation to keep the runtime and plugin source on an external drive; **keep that drive connected while using the plugin**.
+
+This installs the **plugin and MCP**. A final PowerPoint save-and-reopen check also requires Microsoft PowerPoint and Codex computer-use support. One-step desktop installation on Windows and Linux has not been verified.
 
 > **Activation note:** the display name is **MarpPPT**, but typing `@MarpPPT` is not currently a verified activation path. Use `$marp-ppt` or describe the task in your prompt.
 
@@ -65,7 +73,7 @@ MarpPPT runs a local stdio MCP server. It needs Node.js 22 or later, local acces
 
 | Agent | Deployment | Status |
 | --- | --- | --- |
-| **Codex** | Add the local marketplace using the steps above and invoke `$marp-ppt`. See [OpenAI plugin packaging guidance](https://developers.openai.com/plugins/build/plugins). | **Primary target.** Codex CLI marketplace setup is documented. Conversation attachment handoff and opening returned files in Codex still depend on host verification. |
+| **Codex** | Follow the macOS desktop steps above and invoke `$marp-ppt`. See [OpenAI plugin packaging guidance](https://developers.openai.com/plugins/build/plugins). | **Primary target.** The desktop installer covers Node.js and the bundled Codex executable. Conversation attachment handoff and opening returned files in Codex still depend on host verification. |
 | **OpenCode** | Configure the MCP server in `opencode.json` and load the Skill from an Agent Skills location. See the [MCP](https://opencode.ai/docs/en/mcp-servers/) and [Skills](https://opencode.ai/docs/skills) guides. | Requires OpenCode-specific setup. The current Skill's attachment and computer-use steps are Codex-specific, so the full workflow is not supported as-is. |
 | **Claude Code** | Use Claude Code's own plugin, MCP, and Skill conventions. See its [plugin](https://code.claude.com/docs/en/plugins), [MCP](https://code.claude.com/docs/en/mcp), and [Skills](https://code.claude.com/docs/en/skills) guides. | Not a directly installable Claude Code plugin yet; it needs a Claude Code manifest and a host-adapted Skill. |
 

@@ -15,7 +15,7 @@
 
 <p align="center">
   <a href="README.md">English</a> ·
-  <a href="#在-codex-快速開始">快速開始</a> ·
+  <a href="#在-codex-桌面版安裝與使用">快速開始</a> ·
   <a href="#支援矩陣">支援狀態</a> ·
   <a href="CONTRIBUTING.md">參與貢獻</a> ·
   <a href="SECURITY.md">安全政策</a>
@@ -40,20 +40,28 @@ MarpPPT 專注於**快速、成本可控的傳統模板型簡報**。它將現�
 - **提供可編輯產物：** 輸出 `.pptx`、`.marp.md`；有圖片時另附圖片資源包。
 - **核對來源：** 附帶本機 PDF 文字擷取工具，可選擇性核對來源和頁碼。
 
-## 在 Codex 安裝與使用
+## 在 Codex 桌面版安裝與使用
 
-MarpPPT 以本機 Plugin marketplace 發佈。第一次安裝需要 Git、Node.js 22 以上、npm，以及可使用的 Codex CLI。從終端機執行：
+以下安裝方式以 **macOS Codex 桌面版**為目標。只需已安裝並登入桌面 App、可連線到 GitHub 與 nodejs.org，以及可供安裝依賴的硬碟空間；**不必預先安裝 Git、Node.js、npm，或把 `codex` 加入終端機 PATH**。安裝程式會下載並驗證 Node.js、建置本機 Plugin，並使用桌面 App 內附的 Codex 執行檔安裝。安裝程式原始碼可先在 [scripts/install-codex-macos.sh](scripts/install-codex-macos.sh) 檢視。
 
-```bash
-git clone https://github.com/junyi0111/MarpPPT.git
-cd MarpPPT
-npm ci
-npm run build
-codex plugin marketplace add .
-codex plugin add markdown-to-editable-pptx@marpppt
+### 方式一：請 Codex Agent 安裝
+
+在 Codex 桌面版開新對話，貼入：
+
+```text
+請在這台 macOS 電腦安裝 https://github.com/junyi0111/MarpPPT 的 MarpPPT Plugin。先檢視倉庫中的 scripts/install-codex-macos.sh，再在本機執行它；確認 marketplace 與 markdown-to-editable-pptx@marpppt 已安裝，且 MCP 使用的 Node.js 執行檔存在並能啟動。遇到權限或網路限制時請明確回報，完成前不要宣稱可用。最後提醒我完整關閉並重新開啟 Codex，開新對話使用 $marp-ppt。
 ```
 
-重新啟動 Codex，開新對話並附上 Markdown 與圖片，再輸入 `$marp-ppt` 和簡報需求。MCP 產物預設儲存在 `~/.marpppt/artifacts/`；如需更改位置，可在啟動 Codex 前設定絕對路徑環境變數 `PPTX_OUTPUT_ROOT`。
+### 方式二：在 macOS「終端機」貼入
+
+```bash
+set -o pipefail
+curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/install-codex-macos.sh | /bin/bash
+```
+
+看到 `Installed.` 後，**完整結束並重新開啟 Codex**，再開新對話，附上 `.md` 與需要使用的圖片，輸入 `$marp-ppt` 和簡報需求。安裝後可在桌面 App 的 Plugins 中確認 **MarpPPT** 已啟用。MCP 產物預設儲存在 `~/.marpppt/artifacts/`；如需更改位置，可在啟動 Codex 前設定絕對路徑環境變數 `PPTX_OUTPUT_ROOT`。可在安裝前設定絕對路徑的 `MARPPPT_INSTALL_ROOT`，將依賴與 Plugin 來源放在外接硬碟；**使用時必須保持硬碟連接**。
+
+這個流程完成的是 **Plugin 與 MCP 安裝**；若要交付經 PowerPoint 重開驗證的正式簡報，仍需 Microsoft PowerPoint 與 Codex 的電腦操作能力。Windows 與 Linux 的桌面版一鍵安裝尚未驗證。
 
 > **啟動方式：** Plugin 顯示名稱是 **MarpPPT**，但在 Codex 輸入 `@MarpPPT` 尚未驗證為可用的啟動方式。請使用 `$marp-ppt` 或直接描述需求。
 
@@ -65,7 +73,7 @@ MarpPPT 會在本機啟動 stdio MCP 伺服器，需要 Node.js 22 以上、可�
 
 | Agent | 部署方式 | 狀態 |
 | --- | --- | --- |
-| **Codex** | 依上方步驟加入本機 marketplace，以 `$marp-ppt` 呼叫；參考 [OpenAI Plugin 封裝文件](https://developers.openai.com/plugins/build/plugins)。 | **主要目標。** macOS Codex CLI 本機 marketplace 安裝流程可用；對話附件交接與 Codex 產物開啟仍待宿主端驗證。 |
+| **Codex** | 依上方 macOS 桌面版步驟安裝，以 `$marp-ppt` 呼叫；參考 [OpenAI Plugin 封裝文件](https://developers.openai.com/plugins/build/plugins)。 | **主要目標。** 桌面版安裝程式涵蓋 Node.js 與內附 Codex 執行檔；對話附件交接與 Codex 產物開啟仍待宿主端驗證。 |
 | **OpenCode** | 在 `opencode.json` 設定 MCP，並從 Agent Skills 目錄載入 Skill；參考 [MCP](https://opencode.ai/docs/en/mcp-servers/) 與 [Skills](https://opencode.ai/docs/skills) 文件。 | 需要 OpenCode 專用設定。目前 Skill 的附件及電腦操作步驟是 Codex 專用，完整流程尚不支援。 |
 | **Claude Code** | 使用 Claude Code 自己的 Plugin、MCP 和 Skill 格式；參考 [Plugin](https://code.claude.com/docs/en/plugins)、[MCP](https://code.claude.com/docs/en/mcp) 和 [Skills](https://code.claude.com/docs/en/skills) 文件。 | 尚不能直接安裝；需要 Claude Code manifest 與宿主專用 Skill。 |
 

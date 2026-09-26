@@ -10,8 +10,9 @@ This repository contains the local MarpPPT plugin package and its current end-to
 - On 2026-09-26, a clean isolated Codex profile installed the local marketplace plugin and successfully called the installed MCP to render a two-slide Markdown deck without setting `PPTX_OUTPUT_ROOT`.
 - The candidate PPTX passed package checks for content type overrides, relationship targets, and slide bounds. Microsoft PowerPoint opened it without a repair prompt; a Save As copy was closed and reopened successfully, and both slides rendered.
 - The first clean-install attempt exposed two setup defects: the marketplace source must have production dependencies installed before Codex copies it into the plugin cache, and the MCP previously refused to start when `PPTX_OUTPUT_ROOT` was unset. The current local candidate documents `npm ci` before plugin registration and defaults output to `~/.marpppt/artifacts`.
+- On 2026-09-26, the macOS desktop installer was exercised in a separate Codex profile with `git`, `node`, `npm`, and `codex` absent from the test terminal's PATH. It downloaded and checksum-verified Node.js 24, built the plugin, registered the marketplace using the Codex executable bundled with the desktop app, and installed the plugin. A fresh Codex CLI process reported the plugin installed and enabled. The MCP launched from the installed plugin cache and exposed `render_presentation` while the test PATH still lacked Node.js.
 
-These checks apply to the local `v0.2.1` candidate based on commit `5218a9b`. The clean-install fixes are scoped to this patch release. Model-driven Skill activation, automatic conversation-attachment transfer, and Codex artifact opening remain unverified and are tracked separately from the local-install fix.
+The earlier release checks apply to the local `v0.2.1` candidate based on commit `5218a9b`. The desktop-only installer check covers installation and MCP startup, not a signed-in conversation in the desktop UI. Model-driven Skill activation, automatic conversation-attachment transfer, and Codex artifact opening remain unverified and are tracked separately from the local-install fix.
 
 ## Still requires host verification
 

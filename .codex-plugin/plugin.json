@@ -1,6 +1,6 @@
 {
   "name": "markdown-to-editable-pptx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turn Markdown and conversation images into Marp source and editable PowerPoint presentations.",
   "author": {
     "name": "MarpPPT contributors"

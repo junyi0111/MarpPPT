@@ -51,6 +51,8 @@ const inspection = {
   shapeCount: 1,
   graphicFrameCount: 0,
   embeddedMediaCount: 0,
+  contentTypeOverrideCount: 4,
+  contentTypeOverridesValid: true,
   relationshipsValid: true,
 };
 const output = {

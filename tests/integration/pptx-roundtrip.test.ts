@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import pptxgen from "pptxgenjs";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import type { PresentationPlan } from "../../src/contracts/presentation-plan.js";
+import { repairPptxGenJsSlideMasterOverrides } from "../../src/pptx/pptxgenjs-compat.js";
 import { inspectPptx, renderPptx } from "../../src/pptx/render-pptx.js";
 import { loadDefaultTheme, makeMixedDeckFixture, makeResolvedImagePathFixture } from "../helpers/layout-fixtures.js";
 
@@ -35,6 +36,40 @@ async function makeDeckWithImage(): Promise<Uint8Array> {
 }
 
 describe("PPTX OOXML round trip", () => {
+  it("renders multiple slides without Content Types references to missing slide masters", async () => {
+    const bytes = await makeTwoSlideDeck();
+    const archive = unzipSync(bytes);
+    const contentTypes = strFromU8(archive["[Content_Types].xml"]!);
+    const slideMasterOverrides = [...contentTypes.matchAll(/<Override\b[^>]*PartName="([^"]*slideMasters[^"]*)"[^>]*\/>/gu)]
+      .map((match) => match[1]!.replace(/^\//u, ""));
+
+    expect(slideMasterOverrides.length).toBeGreaterThan(0);
+    expect(slideMasterOverrides.every((partName) => partName in archive)).toBe(true);
+  });
+
+  it("keeps the built plugin renderer's multi-slide output valid after design overrides", async () => {
+    const plan = makeMixedDeckFixture();
+    plan.slides = plan.slides.slice(0, 2);
+    plan.imageAssetIds = [];
+    plan.assetManifest = [];
+    const builtRenderer = await import("../../dist/pptx/render-pptx.js");
+    const bytes = await builtRenderer.renderPptx(plan, [], defaultTheme);
+
+    await expect(builtRenderer.inspectPptx(bytes)).resolves.toMatchObject({ slideCount: 2, contentTypeOverridesValid: true });
+  });
+
+  it("keeps strict validation for unrelated missing Content Types parts", async () => {
+    const archive = unzipSync(await makeTwoSlideDeck());
+    const contentTypes = strFromU8(archive["[Content_Types].xml"]!);
+    archive["[Content_Types].xml"] = strToU8(contentTypes.replace(
+      "</Types>",
+      '<Override PartName="/ppt/customXml/item99.xml" ContentType="application/xml"/></Types>',
+    ));
+
+    const bytes = repairPptxGenJsSlideMasterOverrides(zipSync(archive));
+    await expect(inspectPptx(bytes)).rejects.toThrow(/customXml\/item99\.xml/u);
+  });
+
   it("reopens a mixed deck with native text, picture, table, chart, diagram shapes, and media", async () => {
     const root = await mkdtemp(join(tmpdir(), "marpppt-roundtrip-"));
     roots.push(root);

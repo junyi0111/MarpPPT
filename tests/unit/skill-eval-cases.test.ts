@@ -77,6 +77,7 @@ describe("package consistency checks", () => {
         "package.json", "plugin.json", "mcp.json", ".codex-plugin/plugin.json", ".mcp.json",
         "skills/marp-ppt/SKILL.md", "skills/marp-ppt/agents/openai.yaml", "dist/mcp/stdio.js",
         "dist/mcp/http-render-worker-child.js",
+        "dist/pptx/pptxgenjs-compat.js",
         "dist/attachments/local-attachment-stage.js", "dist/attachments/staged-resolver.js",
         "scripts/write-hosted-manifest.ts",
       ]) await clone(path);

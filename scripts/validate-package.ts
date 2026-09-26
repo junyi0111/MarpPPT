@@ -73,13 +73,14 @@ function validateServer(config: JsonObject, where: string, portable: boolean, pr
 export async function validatePackage(root = resolve(import.meta.dirname, ".."), profile: PackageProfile = "local"): Promise<void> {
   const packageMetadata = await json(resolve(root, "package.json"));
   const packageScripts = object(packageMetadata.scripts, "package scripts");
+  const packageVersion = string(packageMetadata.version, "package.version");
   if (packageScripts["stage:attachments"] !== "node dist/attachments/local-attachment-stage.js") {
     throw new Error("Local staging must launch the packaged production JavaScript entrypoint");
   }
   const portable = await json(resolve(root, "plugin.json"));
   const codex = await json(resolve(root, ".codex-plugin/plugin.json"));
-  if (portable.name !== ID || codex.name !== ID || portable.version !== codex.version || portable.version !== "0.1.0") {
-    throw new Error("Portable and Codex manifests must share the stable package ID and version");
+  if (portable.name !== ID || codex.name !== ID || portable.version !== codex.version || portable.version !== packageVersion) {
+    throw new Error("Portable and Codex manifests must share the package ID and match package.json version");
   }
   const codexInterface = object(codex.interface, "Codex plugin interface");
   if (codexInterface.displayName !== "MarpPPT") throw new Error("Plugin display name must be MarpPPT");
@@ -113,6 +114,7 @@ export async function validatePackage(root = resolve(import.meta.dirname, ".."),
   }
   await inside(root, "./dist/mcp/stdio.js", "built MCP entrypoint", "file");
   await inside(root, "./dist/mcp/http-render-worker-child.js", "built isolated HTTP render worker entrypoint", "file");
+  await inside(root, "./dist/pptx/pptxgenjs-compat.js", "built PPTX compatibility helper", "file");
   await inside(root, "./dist/attachments/local-attachment-stage.js", "built attachment staging CLI", "file");
   await inside(root, "./dist/attachments/staged-resolver.js", "built staged attachment resolver", "file");
   await inside(root, "./scripts/write-hosted-manifest.ts", "hosted manifest generator", "file");

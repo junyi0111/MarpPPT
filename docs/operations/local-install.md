@@ -16,7 +16,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-The command compiles the TypeScript runtime, applies the maintained presentation design overlays, validates the package, and writes `runtime/marpppt-0.1.0-local-candidate.zip`. The ZIP omits `node_modules`; install dependencies in the extracted directory and run `npm run package:validate` before registering it.
+The command compiles the TypeScript runtime, applies the maintained presentation design overlays, validates the package, and writes `runtime/marpppt-0.2.0-local-candidate.zip`. The ZIP omits `node_modules`; install dependencies in the extracted directory and run `npm run package:validate` before registering it.
 
 The package contains both portable manifests (`plugin.json`, `mcp.json`) and the Codex compatibility pair (`.codex-plugin/plugin.json`, `.mcp.json`). Both launch `dist/mcp/stdio.js` using the local `presentation` MCP server ID. The explicit Skill name is `$marp-ppt`; `@MarpPPT` has not been verified as an activation path.
 

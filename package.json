@@ -1,8 +1,9 @@
 {
   "name": "markdown-to-editable-pptx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MarpPPT Skill and MCP server for Marp source and editable PowerPoint from Markdown and images",
   "scripts": {
+    "pretest": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "vitest run tests/e2e",
@@ -24,6 +25,9 @@
     "pptxgenjs": "^4.0.1",
     "sharp": "^0.35.4",
     "zod": "^4.6.5"
+  },
+  "overrides": {
+    "image-size": "2.0.4"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

@@ -12,6 +12,7 @@ import { buildSlideLayout, type LayoutObject } from "../layout/build-slide.js";
 import { getCanvas, type Theme } from "../layout/geometry.js";
 import { findOverflow, type LayoutIssue } from "../layout/overflow.js";
 import { addLayoutObject, type LayoutObjectContext, type PptxApi, type PptxSlideApi, type ResolvedPptxAsset } from "./add-layout-object.js";
+import { repairPptxGenJsSlideMasterOverrides } from "./pptxgenjs-compat.js";
 import { PptxValidationError, validatePptx } from "./validate-pptx.js";
 
 export type { ResolvedPptxAsset } from "./add-layout-object.js";
@@ -218,10 +219,11 @@ export async function renderPptx(plan: PresentationPlan, assets: ResolvedPptxAss
 
   try {
     const generated = await pptx.write({ outputType: "uint8array" });
-    const bytes = generated instanceof Uint8Array ? generated
+    const serialized = generated instanceof Uint8Array ? generated
       : generated instanceof ArrayBuffer ? new Uint8Array(generated)
         : undefined;
-    if (!bytes) throw new Error("PptxGenJS returned a non-binary output");
+    if (!serialized) throw new Error("PptxGenJS returned a non-binary output");
+    const bytes = repairPptxGenJsSlideMasterOverrides(serialized);
     await validatePptx(bytes);
     return bytes;
   } catch (error) {

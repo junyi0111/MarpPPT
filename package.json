@@ -1,0 +1,41 @@
+{
+  "name": "markdown-to-editable-pptx",
+  "version": "0.1.0",
+  "description": "MarpPPT Skill and MCP server for Marp source and editable PowerPoint from Markdown and images",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "vitest run tests/e2e",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.healthcheck.json --noEmit",
+    "build": "tsc && tsc -p tsconfig.healthcheck.json && node scripts/apply-presentation-preferences.mjs",
+    "dev": "node --import tsx src/mcp/stdio.ts",
+    "stage:attachments": "node dist/attachments/local-attachment-stage.js",
+    "manifest:hosted": "node --import tsx scripts/write-hosted-manifest.ts",
+    "lint": "tsc --noEmit",
+    "package:validate": "node --import tsx scripts/validate-package.ts",
+    "package:plugin": "npm run build && node --import tsx scripts/package-plugin.ts"
+  },
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "express": "^5.2.1",
+    "fflate": "^0.8.3",
+    "pptxgenjs": "^4.0.1",
+    "sharp": "^0.35.4",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.2",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "author": "MarpPPT contributors"
+}

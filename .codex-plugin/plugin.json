@@ -1,0 +1,24 @@
+{
+  "name": "markdown-to-editable-pptx",
+  "version": "0.1.0",
+  "description": "Turn Markdown and conversation images into Marp source and editable PowerPoint presentations.",
+  "author": {
+    "name": "MarpPPT contributors"
+  },
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "MarpPPT",
+    "shortDescription": "Create editable slides from Markdown and images",
+    "longDescription": "Create editable PowerPoint and Marp source from Markdown and conversation images.",
+    "developerName": "MarpPPT contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use $marp-ppt to turn my Markdown into an editable deck"
+    ]
+  }
+}

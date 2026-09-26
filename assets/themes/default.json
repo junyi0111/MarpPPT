@@ -1,0 +1,82 @@
+{
+  "id": "default",
+  "name": "MarpPPT Tech Editorial",
+  "canvas": {
+    "width": 13.333,
+    "height": 7.5
+  },
+  "safeArea": {
+    "left": 0.45,
+    "right": 0.45,
+    "top": 0.35,
+    "bottom": 0.35
+  },
+  "grid": {
+    "columns": 12,
+    "gutter": 0.24
+  },
+  "typography": {
+    "fontFace": "Noto Sans CJK TC",
+    "title": 32,
+    "coverTitle": 36,
+    "sectionTitle": 30,
+    "body": 20,
+    "takeaway": 27,
+    "note": 12,
+    "minBody": 18,
+    "minNote": 12,
+    "lineHeight": 1.2
+  },
+  "colors": {
+    "background": "#F3F6FA",
+    "title": "#10243E",
+    "body": "#26384D",
+    "muted": "#738299",
+    "accent": "#2F6FED",
+    "accentSoft": "#E8F0FE",
+    "surface": "#FFFFFF",
+    "border": "#DFE6EF",
+    "white": "#FFFFFF",
+    "accentCyan": "#32BFC1",
+    "cyanSoft": "#E4F6F5",
+    "warmSoft": "#FFF2DF",
+    "violetSoft": "#F0EDFF",
+    "darkBackground": "#10243E",
+    "darkBody": "#DCE7F3",
+    "darkMuted": "#A8B8CC",
+    "chartSeries": [
+      "#2F6FED",
+      "#32BFC1",
+      "#E5A34B",
+      "#8C7CF6",
+      "#10243E",
+      "#738299"
+    ]
+  },
+  "imageFit": "contain",
+  "footer": {
+    "showSlideNumber": true,
+    "sourcePrefix": "來源："
+  },
+  "spacing": {
+    "comfortable": {
+      "cmMin": 0.4,
+      "cmMax": 0.6,
+      "inches": 0.2
+    },
+    "compact": {
+      "cmMin": 0.2,
+      "cmMax": 0.3,
+      "inches": 0.1
+    },
+    "spaciousMinCm": 0.8,
+    "spaciousMinInches": 0.315,
+    "table": {
+      "headerVerticalTotalCm": 0.4,
+      "headerVerticalEachInches": 0.079,
+      "bodyVerticalTotalCm": 0.5,
+      "bodyVerticalEachInches": 0.098,
+      "horizontalEachInches": 0.197
+    }
+  }
+}

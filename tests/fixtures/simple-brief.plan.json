@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "title": "團隊改善方案：八頁管理摘要",
+  "language": "zh-TW",
+  "themeId": "default",
+  "sourceDigest": "f523d92d56b864ab0c0142dc6a8dedb1ce1ff920887176532d01b6ef8e47aead",
+  "slides": [
+    {
+      "id": "cover",
+      "title": "團隊改善方案：八頁管理摘要",
+      "subtitle": "2026 年第 4 季 · 四週試行",
+      "layout": "cover",
+      "imageIds": [],
+      "sourceRefs": [
+        "# 團隊改善方案：八頁管理摘要",
+        "## 決策摘要"
+      ]
+    },
+    {
+      "id": "decision",
+      "title": "先做四週試行",
+      "layout": "bullets",
+      "blocks": [
+        {
+          "id": "scope",
+          "text": "限於兩個內部流程"
+        },
+        {
+          "id": "owner",
+          "text": "負責人每週檢查進度"
+        },
+        {
+          "id": "gate",
+          "text": "品質未達標時暫停擴大"
+        }
+      ],
+      "imageIds": [],
+      "sourceRefs": [
+        "## 決策摘要"
+      ]
+    },
+    {
+      "id": "workflow",
+      "title": "接收、分類、複核",
+      "layout": "image-text",
+      "blocks": [
+        {
+          "id": "flow",
+          "text": "自動分類只提供建議；回覆前由人員確認"
+        }
+      ],
+      "imageIds": [
+        "image-2"
+      ],
+      "sourceRefs": [
+        "## 流程",
+        "## 方案比較"
+      ]
+    },
+    {
+      "id": "options",
+      "title": "兩個方案的取捨",
+      "layout": "comparison",
+      "columns": [
+        {
+          "id": "option-a",
+          "title": "方案 A",
+          "blocks": [
+            {
+              "id": "a1",
+              "text": "沿用人工分派"
+            },
+            {
+              "id": "a2",
+              "text": "變動小，等待較久"
+            }
+          ]
+        },
+        {
+          "id": "option-b",
+          "title": "方案 B",
+          "blocks": [
+            {
+              "id": "b1",
+              "text": "自動分類建議"
+            },
+            {
+              "id": "b2",
+              "text": "人工確認並留稽核紀錄"
+            }
+          ]
+        }
+      ],
+      "imageIds": [],
+      "sourceRefs": [
+        "## 方案比較"
+      ]
+    },
+    {
+      "id": "metrics",
+      "title": "試行指標",
+      "layout": "table",
+      "table": {
+        "columns": [
+          "指標",
+          "現況",
+          "四週目標"
+        ],
+        "rows": [
+          [
+            "平均回覆時間",
+            "48 小時",
+            "24 小時"
+          ],
+          [
+            "每週處理量",
+            "120 件",
+            "120 件"
+          ]
+        ]
+      },
+      "imageIds": [],
+      "sourceRefs": [
+        "## 試行指標"
+      ]
+    },
+    {
+      "id": "capacity",
+      "title": "容量示意圖",
+      "layout": "image",
+      "blocks": [
+        {
+          "id": "capacity-note",
+          "text": "排版示意；正式決策以指標表為準"
+        }
+      ],
+      "imageIds": [
+        "image-1"
+      ],
+      "sourceRefs": [
+        "## 容量示意"
+      ]
+    },
+    {
+      "id": "validation",
+      "title": "每週驗證流程",
+      "layout": "diagram",
+      "diagram": {
+        "nodes": [
+          {
+            "id": "baseline",
+            "label": "第 1 週基線"
+          },
+          {
+            "id": "compare",
+            "label": "第 2–4 週比較"
+          },
+          {
+            "id": "review",
+            "label": "未達標則停止擴大"
+          }
+        ],
+        "edges": [
+          {
+            "from": "baseline",
+            "to": "compare"
+          },
+          {
+            "from": "compare",
+            "to": "review"
+          }
+        ]
+      },
+      "imageIds": [],
+      "sourceRefs": [
+        "## 驗證步驟"
+      ]
+    },
+    {
+      "id": "timeline",
+      "title": "準備、試行、回顧",
+      "layout": "image",
+      "blocks": [
+        {
+          "id": "period",
+          "text": "2026 年第 4 季試行四週，期末提交回顧"
+        }
+      ],
+      "imageIds": [
+        "image-3"
+      ],
+      "sourceRefs": [
+        "## 時程"
+      ]
+    }
+  ],
+  "imageAssetIds": [
+    "image-1",
+    "image-2",
+    "image-3"
+  ],
+  "assetManifest": [
+    {
+      "assetId": "image-1",
+      "fileName": "capacity.png",
+      "mimeType": "image/png",
+      "byteLength": 2116,
+      "sha256": "5de95bdb78cd1968ca1f1fe99c2c0ee38701047f4241c1f55b07260844069da8"
+    },
+    {
+      "assetId": "image-2",
+      "fileName": "workflow.png",
+      "mimeType": "image/png",
+      "byteLength": 3899,
+      "sha256": "e05c11097b2bb791b7a4d0557d19aac6aa2d71bbf5bd9f798e88778e55d0a137"
+    },
+    {
+      "assetId": "image-3",
+      "fileName": "timeline.png",
+      "mimeType": "image/png",
+      "byteLength": 3402,
+      "sha256": "905f368d0c426c4e7efd20c0a561b8ac159113585a5f6c76727690c740382c0a"
+    }
+  ]
+}

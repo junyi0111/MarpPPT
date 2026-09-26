@@ -1,0 +1,6 @@
+interface:
+  display_name: "MarpPPT"
+  short_description: "將 Markdown 與對話圖片製成可編輯 PowerPoint 簡報"
+  default_prompt: "Use $marp-ppt to turn my attached Markdown and images into an editable PowerPoint and Marp source."
+policy:
+  allow_implicit_invocation: true

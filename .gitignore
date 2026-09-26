@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-healthcheck/
+coverage/
+runtime/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+*.pptx
+*.marp.md
+*.marp.zip

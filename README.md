@@ -1,7 +1,7 @@
 # MarpPPT
 
 <p align="center">
-  <strong>From Markdown and images to a polished, editable PowerPoint.</strong><br>
+  <strong>From Markdown and images to fast, editable template-based PowerPoint decks.</strong><br>
   A Codex plugin, Skill, and local MCP server for presentations you can keep editing.
 </p>
 
@@ -24,6 +24,12 @@
 ![MarpPPT workflow: Markdown and image attachments become an editable PowerPoint through planning, layout, and validation.](assets/readme/marpppt-workflow.svg)
 
 MarpPPT turns Markdown, conversation directions, and supplied images into Marp source and an **editable `.pptx`**. Text, shapes, tables, charts, and images are placed as native PowerPoint objects so you can continue editing the deck.
+
+## Where MarpPPT fits
+
+MarpPPT focuses on **fast, cost-conscious production of conventional template-based slides**. It turns existing content into consistently laid out PowerPoint decks whose elements remain editable. It is suited to recurring reports, teaching materials, research summaries, and presentations that need frequent revisions.
+
+Its quality goals are **clear information, reliable layout, repeatable production, and easy editing**. Automatically generated presentations in the style of NotebookLM and image-generated decks in the style of Image2 emphasize different storytelling or visual effects. If you want that generated visual style, MarpPPT's template-based output serves a different design goal. Actual costs still depend on your agent, model, and software such as PowerPoint.
 
 ## What you get
 

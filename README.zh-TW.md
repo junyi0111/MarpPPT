@@ -1,7 +1,7 @@
 # MarpPPT
 
 <p align="center">
-  <strong>從 Markdown 和圖片，製作可編輯的 PowerPoint。</strong><br>
+  <strong>從 Markdown 和圖片，快速製作可編輯的模板型 PowerPoint。</strong><br>
   提供 Codex Plugin、Skill 與本機 MCP 伺服器，產出的簡報可以繼續編輯。
 </p>
 
@@ -24,6 +24,12 @@
 ![MarpPPT 流程圖：Markdown 與圖片附件經過簡報規劃、版面配置和檢查，產生可編輯 PowerPoint。](assets/readme/marpppt-workflow.svg)
 
 MarpPPT 將 Markdown、對話需求和提供的圖片轉成 Marp 原始檔與**可編輯的 `.pptx`**。文字、圖形、表格、圖表和圖片會放入 PowerPoint 原生物件，方便後續修改。
+
+## 適用情境與品質取向
+
+MarpPPT 專注於**快速、成本可控的傳統模板型簡報**。它將現有內容整理成版面一致、可逐項編輯的 PowerPoint，適合例行報告、教材、研究摘要，以及需要反覆改稿的簡報。
+
+它的品質目標是**資訊清晰、排版穩定、方便重複製作與後續編輯**。NotebookLM 類型的自動生成簡報，以及 Image2 類型的圖片生成簡報，著重不同的敘事或視覺效果；若你期待那類生成式畫面風格，MarpPPT 的模板式成品並非相同的設計取向。實際費用仍取決於所用 Agent、模型與 PowerPoint 等軟體。
 
 ## 專案提供什麼
 

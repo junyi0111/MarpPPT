@@ -16,6 +16,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Install preview rendering dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            fontconfig \
+            fonts-noto-cjk \
+            libreoffice-impress \
+            poppler-utils
       - run: npm ci
       - run: npm test
       - run: npm run package:validate

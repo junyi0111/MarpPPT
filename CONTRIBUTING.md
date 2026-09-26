@@ -2,6 +2,8 @@
 
 Thanks for helping improve MarpPPT. Keep changes focused and preserve the plugin's explicit source, attachment, and output safety boundaries.
 
+Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Use the repository's issue templates for bugs, feature requests, or documentation problems. Do not post security vulnerabilities in public issues; follow [SECURITY.md](SECURITY.md).
+
 ## Development setup
 
 - Node.js 22 or later and npm.
@@ -30,4 +32,4 @@ npm run package:plugin -- --profile local
 
 ## Pull requests
 
-Describe the behavior change, user impact, and the checks you ran. Do not include private user material in examples or screenshots.
+Use the pull request template to describe the behavior change, user impact, and checks you actually ran. If a check was not possible, state that clearly. Do not include private user material in examples or screenshots.

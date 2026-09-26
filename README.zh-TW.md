@@ -130,7 +130,7 @@ npm run typecheck
 
 ## 參與貢獻
 
-歡迎回報問題、提出小範圍改進或協助製作其他 Agent 的部署轉接器。請先看[貢獻指南](CONTRIBUTING.md)；回報問題時請附上作業系統、Agent 宿主和重現步驟。
+歡迎回報問題、提出小範圍改進或協助製作其他 Agent 的部署轉接器。請先看[貢獻指南](CONTRIBUTING.md)與[社群行為守則](CODE_OF_CONDUCT.md)，並使用 Issue 範本；回報問題時請附上作業系統、Agent 宿主和重現步驟。
 
 ## 授權
 

@@ -130,7 +130,7 @@ See the [acceptance report](docs/operations/acceptance-report.md), [hosted deplo
 
 ## Contributing
 
-Bug reports, focused improvements, and agent-specific deployment adapters are welcome. Start with the [contribution guide](CONTRIBUTING.md); please include your operating system, agent host, and reproduction steps when reporting a problem.
+Bug reports, focused improvements, and agent-specific deployment adapters are welcome. Start with the [contribution guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md), then choose an issue template. Please include your operating system, agent host, and reproduction steps when reporting a problem.
 
 ## License
 

@@ -10,7 +10,7 @@
   <a href="LICENSE"><img alt="MIT 授權" src="https://img.shields.io/badge/license-MIT-2563EB.svg"></a>
   <img alt="Node.js 22 以上" src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white">
   <img alt="套件版本 0.1.0" src="https://img.shields.io/badge/package-0.1.0-6D5EF7">
-  <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="最近更新" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=最近更新"></a>
+  <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="最近更新" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=last%20update"></a>
 </p>
 
 <p align="center">

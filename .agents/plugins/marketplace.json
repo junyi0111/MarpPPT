@@ -1,0 +1,20 @@
+{
+  "name": "marpppt",
+  "interface": {
+    "displayName": "MarpPPT"
+  },
+  "plugins": [
+    {
+      "name": "markdown-to-editable-pptx",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

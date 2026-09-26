@@ -21,7 +21,7 @@ export interface McpServerDependencies extends PresentationServerDependencies {
 }
 
 export function createMcpServer(dependencies: McpServerDependencies): McpServer {
-  const server = new McpServer({ name: "marpppt", version: "0.2.0" });
+  const server = new McpServer({ name: "marpppt", version: "0.2.1" });
   server.registerTool("render_presentation", {
     title: "Render editable PowerPoint and Marp artifacts",
     description: "Validate authorized Markdown and image attachments, render an editable PPTX and matching Marp source, and return verified artifact references.",

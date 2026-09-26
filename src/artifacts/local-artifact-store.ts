@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
+import { homedir } from "node:os";
 import { link, lstat, mkdir, open, realpath, rm, unlink } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -20,7 +21,7 @@ export interface LocalArtifactStore extends ArtifactStore {
 }
 
 function configuredRoot(options: LocalArtifactStoreOptions): string {
-  const root = options.outputRoot ?? process.env.PPTX_OUTPUT_ROOT;
+  const root = options.outputRoot ?? process.env.PPTX_OUTPUT_ROOT ?? join(homedir(), ".marpppt", "artifacts");
   if (!root || !isAbsolute(root)) {
     throw new ArtifactStoreError("ARTIFACT_STORE_FAILED", "Configure PPTX_OUTPUT_ROOT as an absolute output directory.");
   }

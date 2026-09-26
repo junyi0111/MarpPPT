@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1] - 2026-09-26
+
+### Fixed
+
+- Default local artifacts to the private `~/.marpppt/artifacts` directory when `PPTX_OUTPUT_ROOT` is not set.
+- Document a reproducible clean-clone Codex marketplace installation that installs production dependencies before plugin registration.
+- Add the local marketplace manifest required by the documented Codex install commands.
+- Add a regression test for the default private artifact directory and record clean-install verification results.
+
 ## [0.2.0] - 2026-09-26
 
 ### Fixed

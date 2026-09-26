@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { access, mkdtemp, readFile, readdir, realpath, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, readdir, realpath, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,6 +31,26 @@ describe("artifact stores", () => {
     expect(await readFile(savedPath)).toEqual(Buffer.from([1, 2, 3]));
     expect(ref.expiresAt).toBeNull();
     await store.close?.();
+  });
+
+  it("uses a private per-user output directory when no root is configured", async () => {
+    const previousHome = process.env.HOME;
+    const previousOutputRoot = process.env.PPTX_OUTPUT_ROOT;
+    try {
+      process.env.HOME = outputRoot;
+      delete process.env.PPTX_OUTPUT_ROOT;
+
+      const store = await createLocalArtifactStore();
+
+      expect(store.outputRoot).toBe(join(await realpath(outputRoot), ".marpppt", "artifacts"));
+      expect((await stat(store.outputRoot)).mode & 0o777).toBe(0o700);
+      await store.close?.();
+    } finally {
+      if (previousHome === undefined) delete process.env.HOME;
+      else process.env.HOME = previousHome;
+      if (previousOutputRoot === undefined) delete process.env.PPTX_OUTPUT_ROOT;
+      else process.env.PPTX_OUTPUT_ROOT = previousOutputRoot;
+    }
   });
 
   it("rejects traversal job IDs and filenames without writing outside the root", async () => {

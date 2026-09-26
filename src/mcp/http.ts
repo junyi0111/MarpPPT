@@ -16,7 +16,7 @@ import { runHttpRenderWorker, type HttpRenderWorkerOptions } from "./http-render
 import type { RenderFinalizedEvent } from "./tools/render-presentation.js";
 import { createFailClosedRenderDependencies, createMcpServer, type PresentationServerDependencies } from "./server.js";
 
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";
 const DEFAULT_REQUEST_BYTES = 2 * 1024 * 1024;
 const DEFAULT_ACTIVE_REQUESTS = 8;
 const DEFAULT_ACTIVE_JOBS = 2;

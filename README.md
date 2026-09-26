@@ -9,7 +9,7 @@
   <a href="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml"><img alt="Build and package validation" src="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2563EB.svg"></a>
   <img alt="Node.js 22 or later" src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white">
-  <img alt="Package version 0.2.0" src="https://img.shields.io/badge/package-0.2.0-6D5EF7">
+  <img alt="Package version 0.2.1" src="https://img.shields.io/badge/package-0.2.1-6D5EF7">
   <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="Latest commit" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=last%20update"></a>
 </p>
 
@@ -34,9 +34,20 @@ MarpPPT turns Markdown, conversation directions, and supplied images into Marp s
 - **Useful deliverables:** returns editable `.pptx` and `.marp.md` files, plus an image bundle when needed.
 - **Source checks:** includes a local PDF text extraction helper for optional source and page-number verification.
 
-## Start in Codex
+## Install and use in Codex
 
-Install the plugin using Codex's local plugin controls. Then invoke the Skill with `$marp-ppt`, or ask Codex to create a PowerPoint from a Markdown file and its supplied images.
+MarpPPT is distributed through a local plugin marketplace. The first install requires Git, Node.js 22 or later, npm, and the Codex CLI. Run:
+
+```bash
+git clone https://github.com/junyi0111/MarpPPT.git
+cd MarpPPT
+npm ci
+npm run build
+codex plugin marketplace add .
+codex plugin add markdown-to-editable-pptx@marpppt
+```
+
+Restart Codex, start a new conversation, attach the Markdown and images, then invoke `$marp-ppt` with your presentation request. MCP outputs are stored under `~/.marpppt/artifacts/` by default. To choose another location, set `PPTX_OUTPUT_ROOT` to an absolute path before starting Codex.
 
 > **Activation note:** the display name is **MarpPPT**, but typing `@MarpPPT` is not currently a verified activation path. Use `$marp-ppt` or describe the task in your prompt.
 
@@ -48,7 +59,7 @@ MarpPPT runs a local stdio MCP server. It needs Node.js 22 or later, local acces
 
 | Agent | Deployment | Status |
 | --- | --- | --- |
-| **Codex** | Install as a Codex plugin and invoke `$marp-ppt`. See [OpenAI plugin packaging guidance](https://developers.openai.com/plugins/build/plugins). | **Primary target.** Codex manifests are included. Fresh-host attachment handoff and the full PowerPoint gate still need verification. |
+| **Codex** | Add the local marketplace using the steps above and invoke `$marp-ppt`. See [OpenAI plugin packaging guidance](https://developers.openai.com/plugins/build/plugins). | **Primary target.** Codex CLI marketplace setup is documented. Conversation attachment handoff and opening returned files in Codex still depend on host verification. |
 | **OpenCode** | Configure the MCP server in `opencode.json` and load the Skill from an Agent Skills location. See the [MCP](https://opencode.ai/docs/en/mcp-servers/) and [Skills](https://opencode.ai/docs/skills) guides. | Requires OpenCode-specific setup. The current Skill's attachment and computer-use steps are Codex-specific, so the full workflow is not supported as-is. |
 | **Claude Code** | Use Claude Code's own plugin, MCP, and Skill conventions. See its [plugin](https://code.claude.com/docs/en/plugins), [MCP](https://code.claude.com/docs/en/mcp), and [Skills](https://code.claude.com/docs/en/skills) guides. | Not a directly installable Claude Code plugin yet; it needs a Claude Code manifest and a host-adapted Skill. |
 
@@ -75,7 +86,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-This builds the TypeScript, applies the maintained presentation overrides, validates the plugin package, and writes `runtime/marpppt-0.2.0-local-candidate.zip`. The archive excludes `node_modules`, tests, TypeScript source, local runtime data, and environment files. Install dependencies after extracting it.
+This builds the TypeScript, applies the maintained presentation overrides, validates the plugin package, and writes `runtime/marpppt-0.2.1-local-candidate.zip`. The archive excludes `node_modules`, tests, TypeScript source, local runtime data, and environment files. Install dependencies after extracting it.
 
 Other development commands:
 

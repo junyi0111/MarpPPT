@@ -29,12 +29,27 @@ export interface Theme {
     body: string;
     muted: string;
     accent: string;
+    accentCyan?: string;
+    darkBackground?: string;
     accentSoft: string;
+    cyanSoft?: string;
+    warmSoft?: string;
+    violetSoft?: string;
+    darkBody?: string;
+    darkMuted?: string;
     surface: string;
     border: string;
     white: string;
+    chartSeries?: string[];
   };
   imageFit: "contain" | "cover";
+  spacing?: {
+    comfortable?: { cmMin: number; cmMax: number; inches: number };
+    compact?: { cmMin: number; cmMax: number; inches: number };
+    spaciousMinCm?: number;
+    spaciousMinInches?: number;
+    table?: { headerVerticalTotalCm: number; headerVerticalEachInches: number; bodyVerticalTotalCm: number; bodyVerticalEachInches: number; horizontalEachInches: number };
+  };
   footer: { showSlideNumber: boolean; sourcePrefix: string };
 }
 

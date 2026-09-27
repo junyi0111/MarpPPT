@@ -118,6 +118,7 @@ export async function validatePackage(root = resolve(import.meta.dirname, ".."),
   await inside(root, "./dist/attachments/local-attachment-stage.js", "built attachment staging CLI", "file");
   await inside(root, "./dist/attachments/staged-resolver.js", "built staged attachment resolver", "file");
   await inside(root, "./scripts/write-hosted-manifest.ts", "hosted manifest generator", "file");
+  await inside(root, "./scripts/preflight.mjs", "local preflight script", "file");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

@@ -10,6 +10,7 @@ import {
   validatePresentationPlan,
   type PresentationPlan,
 } from "../../contracts/presentation-plan.js";
+import { EditorialBriefSchema, checkEditorial } from "../../contracts/editorial-brief.js";
 import {
   AttachmentResolverError,
   resolveAttachments,
@@ -54,6 +55,7 @@ export const RenderPresentationInputSchema = z.object({
   imageAssetIds: z.array(z.string().min(1).max(120)).max(30)
     .describe("Canonical safe presentation asset IDs in the same order as imageFiles. Keep staged ProbeFileRef.assetId values as resolver tokens; map staged images to the plan's asset IDs here."),
   themeId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/u).optional(),
+  editorialBrief: EditorialBriefSchema.optional(),
 }).strict().superRefine((input, ctx) => {
   if (input.imageAssetIds.length !== input.imageFiles.length) {
     ctx.addIssue({ code: "custom", path: ["imageAssetIds"], message: "One image asset ID is required per image attachment." });
@@ -282,10 +284,10 @@ function appendixTitle(fileName: string): string {
   return `${prefix}${name.slice(0, availableNamePoints - 1).join("")}…`;
 }
 
-function canonicalPlanWithAppendix(plan: PresentationPlan, images: ResolvedAttachments["images"]): PresentationPlan {
+function canonicalPlanWithAppendix(plan: PresentationPlan, images: ResolvedAttachments["images"], maxSlides = MAX_SLIDES): PresentationPlan {
   const referenced = new Set(plan.slides.flatMap((slide) => slide.imageIds));
   const unused = images.filter((image) => !referenced.has(image.assetId));
-  if (plan.slides.length + unused.length > MAX_SLIDES) {
+  if (plan.slides.length + unused.length > maxSlides) {
     throw new Error("PRESENTATION_LIMIT_EXCEEDED");
   }
   const slides = [...plan.slides];
@@ -449,13 +451,29 @@ async function renderPresentationCore(
     }, dependencies.attachmentResolver);
     currentStage = "plan";
 
+    if (request.editorialBrief) {
+      const editorialIssues = checkEditorial(request.editorialBrief, request.plan, new TextDecoder().decode(attachments.markdown));
+      const editorialError = editorialIssues.find((entry) => entry.severity === "error");
+      if (editorialError) {
+        return failure(jobId, editorialError.code, "plan", editorialError.message, {
+          userAction: editorialError.suggestedAction,
+          retryable: false,
+        });
+      }
+    }
+
     let finalPlan: PresentationPlan;
     try {
-      finalPlan = canonicalPlanWithAppendix(request.plan, attachments.images);
+      finalPlan = canonicalPlanWithAppendix(request.plan, attachments.images, request.editorialBrief?.requestedSlideCount ?? MAX_SLIDES);
     } catch (error) {
       if (error instanceof Error && error.message === "PRESENTATION_LIMIT_EXCEEDED") {
-        return failure(jobId, "PRESENTATION_LIMIT_EXCEEDED", "plan", "There is no room to append every received image within the 60-slide limit.", {
-          userAction: "Summarize or remove slides so one appendix slide per unmapped image fits within 60 slides.",
+        const requestedSlideCount = request.editorialBrief?.requestedSlideCount;
+        return failure(jobId, requestedSlideCount ? "EDITORIAL_PAGE_CAPACITY" : "PRESENTATION_LIMIT_EXCEEDED", "plan", requestedSlideCount
+          ? `The requested ${requestedSlideCount} pages cannot contain every received image without an appendix page.`
+          : "There is no room to append every received image within the 60-slide limit.", {
+          userAction: requestedSlideCount
+            ? "Reduce the number of source slides or explicitly reserve a page for every required image."
+            : "Summarize or remove slides so one appendix slide per unmapped image fits within 60 slides.",
         });
       }
       throw error;

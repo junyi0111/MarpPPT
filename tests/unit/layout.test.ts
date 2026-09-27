@@ -36,7 +36,7 @@ describe("controlled slide layouts", () => {
     const slide = makePresentationPlanFixture().slides.find((item) => item.layout === "diagram");
     expect(slide).toBeDefined();
     const objects = buildSlideLayout(slide!, defaultTheme);
-    expect(objects.filter((object) => object.kind === "shape")).toHaveLength(3);
+    expect(objects.filter((object) => object.kind === "shape" && !object.id.includes(":design:"))).toHaveLength(3);
     expect(objects.filter((object) => object.kind === "line")).toHaveLength(2);
     expect(objects.filter((object) => object.kind === "text" && object.role === "diagram-node")).toHaveLength(3);
 

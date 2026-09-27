@@ -187,6 +187,53 @@ describe("render_presentation pipeline", () => {
     }]);
   });
 
+  it("rejects an editorial brief before rendering when its source digest is stale", async () => {
+    const { input, deps } = await setup();
+    (input as Record<string, unknown>).editorialBrief = {
+      version: 1,
+      sourceDigest: "0".repeat(64),
+      audience: "產品團隊",
+      purpose: "說明關鍵指標",
+      useCase: "presenting",
+      requestedSlideCount: 1,
+      mustKeepFacts: [],
+      assets: [],
+      slides: [{
+        slideId: "slide-1",
+        purpose: "說明關鍵指標",
+        evidence: [],
+        factIds: [],
+        form: "summary",
+        variant: "default",
+        focus: { kind: "block", id: "fact-1-1" },
+        limitations: [],
+        speakerNotes: [],
+      }],
+    };
+    const result = await renderPresentation(input, deps);
+    expect(result).toMatchObject({ status: "failed", failure: { code: "EDITORIAL_SOURCE_DIGEST_MISMATCH", stage: "plan" } });
+  });
+
+  it("does not append an unplanned image page beyond an editorial page cap", async () => {
+    const { input, deps, fixture } = await setup();
+    (input as Record<string, unknown>).editorialBrief = {
+      version: 1,
+      sourceDigest: fixture.plan.sourceDigest,
+      audience: "產品團隊",
+      purpose: "只交付一頁",
+      useCase: "presenting",
+      requestedSlideCount: 1,
+      mustKeepFacts: [],
+      assets: [],
+      slides: [{
+        slideId: "slide-1", purpose: "交付一頁", evidence: [], factIds: [], form: "summary", variant: "default",
+        focus: { kind: "block", id: "fact-1-1" }, limitations: [], speakerNotes: [],
+      }],
+    };
+    const result = await renderPresentation(input, deps);
+    expect(result).toMatchObject({ status: "failed", failure: { code: "EDITORIAL_PAGE_CAPACITY", stage: "plan" } });
+  });
+
   it("deletes already-published files when the published output fails schema validation", async () => {
     const { input, deps, localStore } = await setup();
     let putCount = 0;

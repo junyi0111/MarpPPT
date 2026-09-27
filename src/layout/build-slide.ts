@@ -52,6 +52,14 @@ export interface TableLayoutObject extends LayoutBase {
   minFontSize: number;
   color: string;
   headerFill: string;
+  headerColor?: string;
+  numericColor?: string;
+  numericColumns?: number[];
+  columnWidths?: number[];
+  rowHeights?: number[];
+  headerCellMargin?: [number, number, number, number];
+  bodyCellMargin?: [number, number, number, number];
+  lineHeight?: number;
 }
 
 export interface ChartLayoutObject extends LayoutBase, Omit<ChartData, "kind"> {
@@ -103,6 +111,10 @@ function textObject(
 
 function titleObject(slide: SlidePlan, theme: Theme): TextLayoutObject {
   const box = getTextBox("title", slide.layout, theme);
+  if (slide.layout === "section" || slide.layout === "closing") {
+    box.x += 0.25;
+    box.w -= 0.25;
+  }
   const fontSize = slide.layout === "cover" ? theme.typography.coverTitle : slide.layout === "section" || slide.layout === "closing"
     ? theme.typography.sectionTitle
     : theme.typography.title;
@@ -357,26 +369,78 @@ function diagramObjects(slide: Extract<SlidePlan, { layout: "diagram" }>, theme:
 
 function chartObject(slide: Extract<SlidePlan, { layout: "chart" }>, theme: Theme, chart: ChartData): ChartLayoutObject {
   const box = getTextBox("content", slide.layout, theme);
+  const inset = theme.spacing?.comfortable?.inches ?? 0.2;
   const captionReserve = slide.blocks?.length ? 0.78 : 0;
   const { kind: chartKind, ...data } = chart;
-  return { kind: "chart", id: `${slide.id}:chart`, slideId: slide.id, ...box, h: box.h - captionReserve, ...data, chartKind };
+  return { kind: "chart", id: `${slide.id}:chart`, slideId: slide.id, x: box.x + inset, y: box.y + inset, w: box.w - inset * 2, h: box.h - inset * 2 - captionReserve, ...data, chartKind };
 }
 
 function tableObject(slide: Extract<SlidePlan, { layout: "table" }>, theme: Theme, table: TableData): TableLayoutObject {
   const box = getTextBox("content", slide.layout, theme);
   const footerGap = slide.blocks?.length ? 0.78 : 0;
+  const tableBox = {
+    x: box.x + 0.2,
+    y: box.y + 0.2,
+    w: box.w - 0.4,
+    h: box.h - 0.4 - footerGap,
+  };
+  const columnCount = table.columns.length;
+  const firstColumnShare = columnCount <= 1 ? 1 : columnCount === 2 ? 0.52 : 0.40;
+  const otherColumnShare = columnCount <= 1 ? 0 : (1 - firstColumnShare) / Math.max(1, columnCount - 1);
+  const columnWidths = table.columns.map((_, index) => tableBox.w * (index === 0 ? firstColumnShare : otherColumnShare));
+  const isNumeric = (value: string): boolean => /^[-+]?\s*\d[\d,]*(?:\.\d+)?\s*(?:%|[A-Za-z°µμ¥€£元小時分秒天月年件公里公斤]+)?$/u.test(value.trim());
+  const numericColumns = table.columns.map((_, columnIndex) => {
+    const values = table.rows.map((row) => row[columnIndex]).filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+    return values.length > 0 && values.every(isNumeric) ? columnIndex : -1;
+  }).filter((index) => index >= 0);
+  const headerVertical = theme.spacing?.table?.headerVerticalEachInches ?? 0.079;
+  const bodyVertical = theme.spacing?.table?.bodyVerticalEachInches ?? 0.098;
+  const horizontal = theme.spacing?.table?.horizontalEachInches ?? 0.197;
+  const headerCellMargin: [number, number, number, number] = [headerVertical, horizontal, headerVertical, horizontal];
+  const bodyCellMargin: [number, number, number, number] = [bodyVertical, horizontal, bodyVertical, horizontal];
+  const estimateLines = (value: string, width: number, margin: [number, number, number, number]): number => {
+    const capacity = Math.max(1, ((width - margin[1] - margin[3]) * 72) / theme.typography.body);
+    let lines = 1;
+    let used = 0;
+    for (const character of Array.from(value)) {
+      const weight = /[\u2E80-\u9FFF\uF900-\uFAFF\u{20000}-\u{2FA1F}]/u.test(character) ? 1 : 0.54;
+      if (used > 0 && used + weight > capacity) {
+        lines += 1;
+        used = weight;
+      } else {
+        used += weight;
+      }
+    }
+    return lines;
+  };
+  const lineHeightInches = Math.max(theme.typography.body, theme.typography.minBody) * theme.typography.lineHeight / 72;
+  const rowWeights = [table.columns, ...table.rows].map((row, rowIndex) => {
+    const margin = rowIndex === 0 ? headerCellMargin : bodyCellMargin;
+    const maxLines = Math.max(1, ...row.map((value, columnIndex) => estimateLines(value, columnWidths[columnIndex] ?? tableBox.w, margin)));
+    const verticalPaddingLines = (margin[0] + margin[2]) / lineHeightInches;
+    return maxLines + verticalPaddingLines + (rowIndex === 0 ? 0.6 : 0);
+  });
+  const totalWeight = rowWeights.reduce((sum, weight) => sum + weight, 0);
+  const rowHeights = rowWeights.map((weight) => tableBox.h * weight / totalWeight);
   return {
     kind: "table",
     id: `${slide.id}:table`,
     slideId: slide.id,
-    ...box,
-    h: box.h - footerGap,
+    ...tableBox,
     ...table,
     fontFace: theme.typography.fontFace,
     fontSize: theme.typography.body,
     minFontSize: theme.typography.minBody,
     color: theme.colors.body,
-    headerFill: theme.colors.accentSoft,
+    headerFill: theme.colors.darkBackground ?? theme.colors.accentSoft,
+    headerColor: theme.colors.white,
+    numericColor: theme.colors.title,
+    numericColumns,
+    columnWidths,
+    rowHeights,
+    headerCellMargin,
+    bodyCellMargin,
+    lineHeight: 1.2,
   };
 }
 
@@ -413,20 +477,22 @@ export function buildSlideLayout(slide: SlidePlan, theme: Theme): LayoutObject[]
     case "bullets": {
       const area = { x: 0.92, y: 1.55, w: 11.85, h: 4.95 };
       const gap = 0.1;
+      const compactInset = theme.spacing?.compact?.inches ?? 0.1;
       const itemH = (area.h - gap * (slide.blocks.length - 1)) / slide.blocks.length;
       slide.blocks.forEach((block, index) => {
         const y = area.y + index * (itemH + gap);
         objects.push(shape(slide, `bullet-marker:${block.id}`, { x: 0.68, y: y + 0.25, w: 0.14, h: 0.14 }, { shape: "ellipse", fill: theme.colors.accent }));
-        objects.push(textObject(slide, theme, `${slide.id}:text:${block.id}`, "bullet", block.text, { x: area.x, y, w: area.w, h: itemH }, {
+        objects.push(textObject(slide, theme, `${slide.id}:text:${block.id}`, "bullet", block.text, { x: area.x + compactInset, y: y + compactInset, w: area.w - compactInset * 2, h: itemH - compactInset * 2 }, {
           fontSize: theme.typography.body, minFontSize: theme.typography.minBody,
         }));
       });
       break;
     }
     case "image-text": {
-      const textArea = { x: 0.6, y: 1.58, w: 5.35, h: 4.95 };
+      const inset = theme.spacing?.comfortable?.inches ?? 0.2;
+      const textArea = { x: 0.52 + inset, y: 1.49 + inset, w: 5.52 - inset * 2, h: 5.12 - inset * 2 };
       objects.push(...blockObjects(slide, theme, slide.blocks, textArea, "body", { gap: 0.14 }));
-      objects.push(...imageObjects(slide, theme, slide.imageIds, { x: 6.25, y: 1.58, w: 6.45, h: 4.95 }));
+      objects.push(...imageObjects(slide, theme, slide.imageIds, { x: 6.24 + inset, y: 1.49 + inset, w: 6.56 - inset * 2, h: 5.12 - inset * 2 }));
       break;
     }
     case "comparison":
@@ -459,5 +525,89 @@ export function buildSlideLayout(slide: SlidePlan, theme: Theme): LayoutObject[]
 
   const source = sourceObject(slide, theme);
   if (source) objects.push(source);
-  return objects;
+  return applyEditorialDesign(slide, theme, objects);
+}
+
+function designShape(slide: SlidePlan, id: string, box: Box, fill: string, stroke = "#00000000", strokeWidth = 0, shapeName: ShapeLayoutObject["shape"] = "roundRect"): ShapeLayoutObject {
+  return {
+    kind: "shape",
+    id: `${slide.id}:design:${id}`,
+    slideId: slide.id,
+    ...box,
+    shape: shapeName,
+    fill,
+    stroke,
+    strokeWidth,
+  };
+}
+
+function applyEditorialDesign(slide: SlidePlan, theme: Theme, sourceObjects: LayoutObject[]): LayoutObject[] {
+  const colors = theme.colors;
+  const dark = slide.layout === "cover" || slide.layout === "section" || slide.layout === "closing";
+  const styledObjects = sourceObjects.map((object) => {
+    if (object.kind !== "text") return object;
+    if (dark) {
+      const color = object.role === "title" ? colors.white
+        : object.role === "source" ? (colors.darkMuted ?? colors.muted)
+          : object.role === "subtitle" ? (colors.accentCyan ?? colors.accent)
+            : (colors.darkBody ?? colors.white);
+      return { ...object, color };
+    }
+    return object.role === "title" ? { ...object, color: colors.title } : object;
+  });
+  const backgroundObjects: LayoutObject[] = [];
+  if (dark) {
+    const title = styledObjects.find((object): object is TextLayoutObject => object.kind === "text" && object.role === "title");
+    if (title) {
+      const spaciousInset = theme.spacing?.spaciousMinInches ?? 0.315;
+      backgroundObjects.push(designShape(slide, "dark-title-accent", {
+        x: Math.max(theme.safeArea.left, title.x - spaciousInset - 0.075),
+        y: title.y + 0.16,
+        w: 0.075,
+        h: Math.min(0.96, Math.max(0.58, title.h - 0.28)),
+      }, colors.accentCyan ?? colors.accent, "#00000000", 0, "rect"));
+    }
+  } else {
+    backgroundObjects.push(designShape(slide, "title-rule", {
+      x: theme.safeArea.left + 0.1, y: 1.445, w: 1.12, h: 0.045,
+    }, colors.accentCyan ?? colors.accent, "#00000000", 0, "rect"));
+  }
+  if (slide.layout === "bullets") {
+    for (const object of styledObjects) {
+      if (object.kind !== "text" || object.role !== "bullet") continue;
+      const compactInset = theme.spacing?.compact?.inches ?? 0.1;
+      backgroundObjects.push(designShape(slide, `bullet-card:${object.id}`, {
+        x: 0.57, y: object.y - compactInset, w: 12.24, h: Math.max(0.3, object.h + compactInset * 2),
+      }, colors.surface, colors.border, 0.55));
+    }
+  } else if (slide.layout === "image-text") {
+    backgroundObjects.push(designShape(slide, "image-text-copy-panel", { x: 0.52, y: 1.49, w: 5.52, h: 5.12 }, colors.surface, colors.border, 0.55));
+    backgroundObjects.push(designShape(slide, "image-text-image-panel", { x: 6.24, y: 1.49, w: 6.56, h: 5.12 }, colors.surface, colors.border, 0.55));
+  } else if (slide.layout === "chart" || slide.layout === "table") {
+    backgroundObjects.push(designShape(slide, `${slide.layout}-panel`, { x: 0.50, y: 1.49, w: 12.32, h: 5.15 }, colors.surface, colors.border, 0.55));
+  }
+  const result: LayoutObject[] = [];
+  for (const object of styledObjects) {
+    if (object.kind === "shape" && object.id.endsWith(":takeaway-card")) {
+      result.push({ ...object, fill: colors.cyanSoft ?? colors.accentSoft, stroke: colors.border, strokeWidth: 0.65 });
+      result.push(designShape(slide, "takeaway-accent", { x: object.x, y: object.y, w: 0.10, h: object.h }, colors.accentCyan ?? colors.accent, "#00000000", 0, "rect"));
+      continue;
+    }
+    if (object.kind === "shape" && object.id.endsWith(":card")) {
+      result.push({ ...object, fill: colors.surface, stroke: colors.border, strokeWidth: 0.7 });
+      result.push(designShape(slide, `comparison-accent:${object.id}`, { x: object.x + 0.3, y: object.y + 0.23, w: 0.72, h: 0.06 }, colors.accentCyan ?? colors.accent, "#00000000", 0, "rect"));
+      continue;
+    }
+    if (object.kind === "shape" && object.id.includes(":node:")) {
+      const fills = [colors.accentSoft, colors.cyanSoft ?? colors.accentSoft, colors.violetSoft ?? colors.accentSoft, colors.warmSoft ?? colors.accentSoft];
+      result.push({ ...object, fill: fills[result.length % fills.length]!, stroke: colors.accent, strokeWidth: 0.85 });
+      continue;
+    }
+    if (object.kind === "line" && object.id.includes(":edge:")) {
+      result.push({ ...object, stroke: colors.muted, strokeWidth: 1.25 });
+      continue;
+    }
+    result.push(object);
+  }
+  return [...backgroundObjects, ...result];
 }

@@ -20,12 +20,14 @@ Codex 的明確呼叫是 `$marp-ppt`。一般「把 Markdown 做成 PPTX／Power
 3. 若使用者同時提供學術 PDF，依套件內的 [production-quality.md](references/production-quality.md) 工作流，用本套件附帶的 Poppler 擷取器讀取頁碼與文字；核對公式、指標定義、表格數字與引用頁碼。文字擷取不清楚表格、公式或圖示時，將該頁轉成影像再目視核對。PDF 是條件式參考來源，不取代 Markdown；不可讀取或無法定位時，標示未核實，不要自行補值。所有原始 Markdown 與圖片先交給套件的私密 staging 程式建立工作副本，不覆寫原件；附圖逐張檢查、建立 manifest，必要時只在副本上做不改變長寬比例的處理。
 4. 從來源和對話要求建立符合 `PresentationPlan` 的唯一計畫：`version: 1`、標題、語言、`themeId: default`、來源原始位元組 SHA-256 `sourceDigest`、`slides`、`imageAssetIds`、`assetManifest`。每頁一個主訊息，有唯一 ID、受控版型、可編輯的文字／圖表／表格／圖形資料，內容頁有精確 `sourceRefs`。清單中的每個圖片 ID 都要有同 ID 的 manifest 紀錄（原檔名、MIME、位元組數、SHA-256），每個引用都要指到清單內的 ID。最多 60 頁、30 張 PNG/JPEG；來源上限 2 MiB，單圖 10 MiB，總附件 50 MiB。內文文字與底層圖形預設每側留 0.4–0.6 公分，資訊密集時可用 0.2–0.3 公分，封面或金句至少留 0.8 公分；表格依表頭、分類欄、數值欄與敘述欄規範排版。版型細節和溢出準則見 [layout-contract.md](references/layout-contract.md)。 圖片比例、文字垂直置中與字體選用都是輸出硬性版面條件，必須同時套用於 PPTX 與預覽。
 5. `sourceFile.assetId` 與 `imageFiles[].assetId` 是 staging 回傳的 `stage:` 開頭不透明引用，只供附件解析器讀取。另為每張圖分配穩定、安全的簡報 ID，例如 `image-1`，按 `imageFiles` 順序放入頂層 `imageAssetIds`，並與 `plan.imageAssetIds`、`plan.assetManifest[].assetId` 及各頁 `imageIds` 對應。簡報 ID 只用英數、`_`、`-`，由英數開頭，最長 120 字元。不能把 staging CLI 輸出的探針用 `imageAssetIds` 原樣傳給正式工具。
+6. 在正式渲染前執行 `node scripts/preflight.mjs <絕對輸出目錄>` 或等效的 `runLocalPreflight`。缺 Node 版本、MCP 入口、LibreOffice／Poppler、輸出寫入權限或實際 `Noto Sans CJK TC` family 時，先回報具體缺項，不開始完整製作。
+7. 同一次全稿規劃建立可選的 `editorialBrief`，把觀眾、目的、頁數、每頁主訊息、證據行範圍、必留事實、圖片映射與版型語意放在一起。細節規範見 [editorial-workflow.md](references/editorial-workflow.md)。若 brief 存在，正式 MCP 會先檢查 sourceDigest、行範圍、slideId／factId／assetId、頁數與必留畫面事實；檢查不通過就停止，不把錯誤留到 PPTX 才發現。
 
 ## 渲染與交付
 
 生成與編輯 PPTX 的唯一工具是本 Plugin 的 `render_presentation`；設計標準、PDF 擷取器、圖片檢查、ZIP 封裝驗證與交付檢查表都隨 MarpPPT 套件提供，不要求使用者另外啟用 Presentations 或 PDF Plugin。若可用，可把其他簡報文件的設計建議當作參考；不得呼叫其他套件生成或編輯本次 PPTX。
 
-只呼叫正式 MCP 工具 `render_presentation`，送入恰好 `{ plan, sourceFile, imageFiles, imageAssetIds, themeId? }`。工具不可用時，明確告知「MarpPPT 的 presentation MCP 依賴目前不可用；請安裝／啟用本 Plugin 的本機 MCP 後再試」，不要宣稱已完成簡報或偷偷改用其他輸出流程。
+只呼叫正式 MCP 工具 `render_presentation`，送入 `{ plan, sourceFile, imageFiles, imageAssetIds, themeId?, editorialBrief? }`。工具不可用時，明確告知「MarpPPT 的 presentation MCP 依賴目前不可用；請安裝／啟用本 Plugin 的本機 MCP 後再試」，不要宣稱已完成簡報或偷偷改用其他輸出流程。
 
 讀取 `status`、`failure.code`、`failure.stage`、`failure.affectedFileOrSlide`、`failure.userAction`、`failure.retryable` 以及 `validation.issues`：
 

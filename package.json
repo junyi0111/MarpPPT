@@ -14,6 +14,7 @@
     "manifest:hosted": "node --import tsx scripts/write-hosted-manifest.ts",
     "lint": "tsc --noEmit",
     "package:validate": "node --import tsx scripts/validate-package.ts",
+    "preflight": "node scripts/preflight.mjs",
     "package:plugin": "npm run build && node --import tsx scripts/package-plugin.ts"
   },
   "license": "MIT",

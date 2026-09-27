@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "baselineCommit": "3ae3597",
+  "sourcePolicy": "public-synthetic-only",
+  "cases": [
+    {
+      "id": "routine-report",
+      "label": "例行商業報告",
+      "source": "../simple-brief.md",
+      "plan": "../simple-brief.plan.json",
+      "assets": ["../three-images/capacity.png", "../three-images/workflow.png", "../three-images/timeline.png"],
+      "expectedSlideCount": 8,
+      "mustKeepFacts": ["2026 年第 4 季", "四週試行", "48 小時", "24 小時", "120 件"],
+      "status": "available"
+    },
+    {
+      "id": "bilingual-research-summary",
+      "label": "雙語研究摘要",
+      "source": "../simple-brief.md",
+      "plan": "../simple-brief.plan.json",
+      "assets": [],
+      "expectedSlideCount": 8,
+      "mustKeepFacts": ["2026 年第 4 季", "48 小時", "24 小時"],
+      "status": "fixture-pending",
+      "note": "保留欄位，待公開雙語來源加入後再執行基準。"
+    },
+    {
+      "id": "teaching-definition",
+      "label": "教學定義",
+      "source": "../simple-brief.md",
+      "plan": "../simple-brief.plan.json",
+      "assets": [],
+      "expectedSlideCount": 8,
+      "mustKeepFacts": ["接收", "分類", "複核"],
+      "status": "fixture-pending",
+      "note": "保留欄位，待教學用公開來源加入後再執行基準。"
+    },
+    {
+      "id": "linear-process",
+      "label": "線性流程",
+      "source": "../simple-brief.md",
+      "plan": "../simple-brief.plan.json",
+      "assets": ["../three-images/workflow.png"],
+      "expectedSlideCount": 8,
+      "mustKeepFacts": ["接收", "分類", "複核"],
+      "status": "available"
+    },
+    {
+      "id": "branching-process",
+      "label": "分支流程",
+      "source": "../simple-brief.md",
+      "plan": "../simple-brief.plan.json",
+      "assets": ["../three-images/workflow.png"],
+      "expectedSlideCount": 8,
+      "mustKeepFacts": ["人工確認", "停止擴大"],
+      "status": "available"
+    },
+    {
+      "id": "dense-comparison-table",
+      "label": "密集比較表",
+      "source": "../simple-brief.md",
+      "plan": "../simple-brief.plan.json",
+      "assets": [],
+      "expectedSlideCount": 8,
+      "mustKeepFacts": ["平均回覆時間", "每週處理量", "48 小時", "24 小時"],
+      "status": "available"
+    },
+    {
+      "id": "extreme-image-ratios",
+      "label": "極端比例與低解析附件",
+      "source": "../simple-brief.md",
+      "plan": "../simple-brief.plan.json",
+      "assets": ["../three-images/capacity.png", "../three-images/timeline.png"],
+      "expectedSlideCount": 8,
+      "mustKeepFacts": ["排版示意", "正式決策以指標表為準"],
+      "status": "available"
+    },
+    {
+      "id": "fixed-ten-slides",
+      "label": "固定十頁且每圖必用",
+      "source": "../simple-brief.md",
+      "plan": "../simple-brief.plan.json",
+      "assets": ["../three-images/capacity.png", "../three-images/workflow.png", "../three-images/timeline.png"],
+      "expectedSlideCount": 10,
+      "mustKeepFacts": ["capacity.png", "workflow.png", "timeline.png", "2026 年第 4 季"],
+      "status": "fixture-pending",
+      "note": "目前八頁合法計畫不冒充十頁基準；待十頁固定計畫加入後執行。"
+    }
+  ],
+  "scoring": {
+    "weights": {
+      "contentEvidence": 30,
+      "hierarchyFocus": 25,
+      "readabilityWhitespace": 20,
+      "editability": 15,
+      "accessibility": 10
+    },
+    "scale": {
+      "1": "主訊息不清、主要證據遺失或無法閱讀；需要重做。",
+      "3": "內容可理解，但需要少量調整才能交付。",
+      "5": "主訊息、證據、層次、可讀性與編輯行為均可直接使用。"
+    },
+    "releaseGate": {
+      "minimumWeightedScore": 80,
+      "minimumPerDimension": 3,
+      "firstCandidateTarget": "7/8 positive cases",
+      "finalCandidateRule": "all hard gates pass"
+    }
+  }
+}

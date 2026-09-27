@@ -48,7 +48,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-The command compiles the TypeScript runtime, applies the maintained presentation design overlays, validates the package, and writes `runtime/marpppt-0.2.1-local-candidate.zip`.
+The command compiles the TypeScript runtime, validates the committed presentation design contract, validates the package, and writes `runtime/marpppt-0.2.1-local-candidate.zip`.
 
 The package contains both portable manifests (`plugin.json`, `mcp.json`) and the Codex compatibility pair (`.codex-plugin/plugin.json`, `.mcp.json`). Both launch `dist/mcp/stdio.js` using the local `presentation` MCP server ID. The explicit Skill name is `$marp-ppt`; `@MarpPPT` has not been verified as an activation path.
 
@@ -57,5 +57,14 @@ The package contains both portable manifests (`plugin.json`, `mcp.json`) and the
 The Skill may stage only paths the host exposes as readable conversation attachments. Invoke `stage:attachments` through a structured process argument array, never by interpolating paths into shell code. The CLI copies verified Markdown and PNG/JPEG inputs into a private expiring job and returns opaque `assetId` references. The MCP receives those references, not arbitrary local paths or source bytes.
 
 After the MCP renders a PPTX, verify the package result and open it in Microsoft PowerPoint through Codex computer use. Save a new copy, close PowerPoint, and reopen that saved copy. Deliver that copy only if no repair prompt appears. If attachment handoff, CUA, or PowerPoint is unavailable, report the exact blocked gate and label the raw export as an unverified draft.
+
+Before a full render, run the local preflight against the intended absolute output directory:
+
+```bash
+npm run build
+node scripts/preflight.mjs /absolute/path/to/marpppt-output
+```
+
+The report separately records Node/MCP startup, output write access, LibreOffice/Poppler availability and the actual `Noto Sans CJK TC` family match. A failed preflight is an actionable setup failure, not a presentation draft.
 
 See [privacy and retention](privacy-and-retention.md) for staging limits and artifact lifetimes.

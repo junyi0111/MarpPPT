@@ -16,7 +16,7 @@ async function clonedPackageRoot(): Promise<string> {
     "plugin.json", "mcp.json", ".codex-plugin/plugin.json", ".mcp.json",
     "package.json", "package-lock.json", "README.md", "README.zh-TW.md", "LICENSE",
     "scripts/validate-package.ts", "scripts/package-plugin.ts", "scripts/write-hosted-manifest.ts",
-    "scripts/extract-pdf-reference.mjs",
+    "scripts/extract-pdf-reference.mjs", "scripts/preflight.mjs",
     "skills", "assets", "dist", "docs/operations",
   ]) {
     const target = join(cloneRoot, path);
@@ -47,6 +47,7 @@ it("creates a deterministic local candidate ZIP with only runtime and validation
     "assets/themes/default.json", "dist/mcp/stdio.js", "dist/attachments/local-attachment-stage.js",
     "dist/mcp/http-render-worker-child.js", "dist/attachments/staged-resolver.js", "scripts/validate-package.ts",
     "scripts/write-hosted-manifest.ts",
+    "scripts/preflight.mjs",
     "dist/pptx/pptxgenjs-compat.js",
   ]) expect(paths).toContain(required);
   expect(JSON.parse(new TextDecoder().decode(files["package.json"]!)).scripts["stage:attachments"])

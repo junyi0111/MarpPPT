@@ -65,7 +65,7 @@ function addText(object: TextLayoutObject, context: LayoutObjectContext): void {
     bold: object.bold ?? false,
     margin: 0,
     breakLine: false,
-    valign: "top",
+    valign: "mid",
     wrap: true,
     fit: "none",
     paraSpaceAfterPt: 0,
@@ -134,16 +134,21 @@ function addImage(object: ImageLayoutObject, context: LayoutObjectContext): void
 function addTable(object: TableLayoutObject, context: LayoutObjectContext): void {
   const fontSize = Math.max(object.fontSize, object.minFontSize);
   const borderColor = colorStyle(context.theme.colors.border).color;
-  const rows = [object.columns, ...object.rows].map((row, rowIndex) => row.map((text) => ({
+  const numericColumns = new Set(object.numericColumns ?? []);
+  const headerMargin = object.headerCellMargin ?? [0.079, 0.197, 0.079, 0.197];
+  const bodyMargin = object.bodyCellMargin ?? [0.098, 0.197, 0.098, 0.197];
+  const rows = [object.columns, ...object.rows].map((row, rowIndex) => row.map((text, columnIndex) => ({
     text,
     options: {
       fontFace: fontFaceForTheme(context.theme),
       fontSize,
-      color: colorStyle(object.color).color,
-      bold: rowIndex === 0,
+      color: colorStyle(rowIndex === 0 ? (object.headerColor ?? "#FFFFFF") : numericColumns.has(columnIndex) ? (object.numericColor ?? context.theme.colors.title) : object.color).color,
+      bold: rowIndex === 0 || columnIndex === 0 || numericColumns.has(columnIndex),
       ...(rowIndex === 0 ? { fill: colorStyle(object.headerFill) } : {}),
-      margin: 0.06,
+      align: rowIndex === 0 ? "center" : numericColumns.has(columnIndex) ? "right" : "left",
+      margin: rowIndex === 0 ? headerMargin : bodyMargin,
       valign: "mid",
+      lineSpacingMultiple: object.lineHeight ?? 1.2,
     },
   })));
   context.slide.addTable(rows, {
@@ -151,13 +156,13 @@ function addTable(object: TableLayoutObject, context: LayoutObjectContext): void
     y: object.y,
     w: object.w,
     h: object.h,
-    colW: Array.from({ length: object.columns.length }, () => object.w / object.columns.length),
-    rowH: object.h / (object.rows.length + 1),
+    colW: object.columnWidths ?? Array.from({ length: object.columns.length }, () => object.w / object.columns.length),
+    rowH: object.rowHeights ?? object.h / (object.rows.length + 1),
     fontFace: fontFaceForTheme(context.theme),
     fontSize,
     color: colorStyle(object.color).color,
     border: { type: "solid", color: borderColor, pt: 0.7 },
-    margin: 0.06,
+    margin: bodyMargin,
     valign: "mid",
     autoPage: false,
     ...objectName(object.id),
@@ -166,7 +171,7 @@ function addTable(object: TableLayoutObject, context: LayoutObjectContext): void
 
 function addChart(object: ChartLayoutObject, context: LayoutObjectContext): void {
   const type = context.pptx.ChartType[object.chartKind];
-  const axisLabelFontSize = Math.max(context.theme.typography.minNote, 12);
+  const axisLabelFontSize = Math.max(context.theme.typography.minBody, 18);
   const data = object.series.map((series) => ({
     name: series.name,
     labels: object.labels,
@@ -181,7 +186,7 @@ function addChart(object: ChartLayoutObject, context: LayoutObjectContext): void
     showTitle: false,
     showValue: object.chartKind === "pie",
     showLabel: object.chartKind === "pie",
-    chartColors: [context.theme.colors.accent, context.theme.colors.accentSoft, context.theme.colors.title, context.theme.colors.muted]
+    chartColors: (context.theme.colors.chartSeries ?? [context.theme.colors.accent, context.theme.colors.accentCyan ?? context.theme.colors.accent, context.theme.colors.title, context.theme.colors.muted])
       .map((color) => colorStyle(color).color),
     catAxisLabelFontFace: fontFaceForTheme(context.theme),
     valAxisLabelFontFace: fontFaceForTheme(context.theme),

@@ -7,9 +7,10 @@ import type {
   TextBlock,
 } from "../contracts/presentation-plan.js";
 import { normalizeMathText } from "../content/math-text.js";
+import { parseMetricComparison } from "../content/metric-comparison.js";
 import { getTextBox, type Box, type Theme } from "./geometry.js";
 
-export type TextRole = "title" | "subtitle" | "body" | "bullet" | "comparison-heading" | "diagram-node" | "diagram-edge-label" | "source" | "label";
+export type TextRole = "title" | "subtitle" | "body" | "bullet" | "comparison-heading" | "diagram-node" | "diagram-edge-label" | "source" | "label" | "metric-before" | "metric-after" | "metric-arrow" | "metric-label";
 
 interface LayoutBase extends Box {
   id: string;
@@ -27,6 +28,7 @@ export interface TextLayoutObject extends LayoutBase {
   maxLines?: number;
   color: string;
   bold?: boolean;
+  align?: "left" | "center" | "right";
 }
 
 export interface ImageLayoutObject extends LayoutBase {
@@ -90,7 +92,7 @@ function textObject(
   role: TextRole,
   text: string,
   box: Box,
-  options: { fontSize?: number; minFontSize?: number; maxLines?: number; color?: string; bold?: boolean } = {},
+  options: { fontSize?: number; minFontSize?: number; maxLines?: number; color?: string; bold?: boolean; align?: TextLayoutObject["align"] } = {},
 ): TextLayoutObject {
   const note = role === "source";
   return {
@@ -107,6 +109,7 @@ function textObject(
     ...(options.maxLines === undefined ? {} : { maxLines: options.maxLines }),
     color: options.color ?? (note ? theme.colors.muted : theme.colors.body),
     ...(options.bold === undefined ? {} : { bold: options.bold }),
+    ...(options.align === undefined ? {} : { align: options.align }),
   };
 }
 
@@ -147,17 +150,75 @@ function blockObjects(
   box: Box,
   role: "body" | "bullet" = "body",
   options: { gap?: number; fontSize?: number } = {},
-): TextLayoutObject[] {
+): LayoutObject[] {
   if (blocks.length === 0) return [];
   const requestedGap = options.gap ?? 0.12;
   const gap = blocks.length > 1 ? Math.min(requestedGap, box.h / (2 * (blocks.length - 1))) : 0;
   const itemHeight = box.h > 0 ? (box.h - gap * (blocks.length - 1)) / blocks.length : 0;
-  return blocks.map((block, index) => textObject(slide, theme, `${slide.id}:text:${block.id}`, role, block.text, {
-    x: box.x,
-    y: box.y + index * (itemHeight + gap),
-    w: box.w,
-    h: itemHeight,
-  }, { fontSize: options.fontSize }));
+  return blocks.flatMap((block, index) => {
+    const blockBox = {
+      x: box.x,
+      y: box.y + index * (itemHeight + gap),
+      w: box.w,
+      h: itemHeight,
+    };
+    const metric = metricComparisonObjects(slide, theme, block.id, block.text, blockBox, options.fontSize);
+    return metric ?? [textObject(slide, theme, `${slide.id}:text:${block.id}`, role, block.text, blockBox, { fontSize: options.fontSize })];
+  });
+}
+
+function metricComparisonObjects(
+  slide: SlidePlan,
+  theme: Theme,
+  blockId: string,
+  text: string,
+  box: Box,
+  requestedFontSize?: number,
+): LayoutObject[] | undefined {
+  // Short captions do not have enough vertical room for the visual treatment.
+  if (box.w < 4 || box.h < 0.85) return undefined;
+  const metric = parseMetricComparison(text);
+  if (!metric) return undefined;
+
+  const baseFontSize = requestedFontSize ?? theme.typography.body;
+  const labelHeight = Math.min(0.34, Math.max(0.24, box.h * 0.24));
+  const valueY = box.y + labelHeight + 0.04;
+  const valueH = Math.max(0.42, box.h - labelHeight - 0.04);
+  const gap = Math.min(0.22, Math.max(0.12, box.w * 0.015));
+  const arrowW = Math.min(0.72, Math.max(0.5, box.w * 0.07));
+  const valueW = Math.max(1.4, box.w - arrowW - gap * 2);
+  const beforeW = valueW * 0.36;
+  const afterW = valueW - beforeW;
+  const beforeBox = { x: box.x, y: valueY, w: beforeW, h: valueH };
+  const arrowBox = { x: beforeBox.x + beforeBox.w + gap, y: valueY, w: arrowW, h: valueH };
+  const afterBox = { x: arrowBox.x + arrowBox.w + gap, y: valueY, w: afterW, h: valueH };
+  const labelFontSize = Math.max(theme.typography.minBody, Math.round(baseFontSize * 0.75));
+  const idPrefix = `${slide.id}:metric:${blockId}`;
+
+  return [
+    textObject(slide, theme, `${idPrefix}:label`, "metric-label", metric.context, {
+      x: box.x, y: box.y, w: box.w, h: labelHeight,
+    }, { fontSize: labelFontSize, minFontSize: labelFontSize, color: theme.colors.muted, bold: true, align: "center", maxLines: 1 }),
+    textObject(slide, theme, `${idPrefix}:before`, "metric-before", metric.before, beforeBox, {
+      fontSize: baseFontSize, minFontSize: baseFontSize, color: theme.colors.muted, bold: true, align: "center", maxLines: 1,
+    }),
+    textObject(slide, theme, `${idPrefix}:arrow`, "metric-arrow", "→", arrowBox, {
+      fontSize: Math.max(theme.typography.minBody, Math.round(baseFontSize * 0.9)),
+      minFontSize: theme.typography.minBody,
+      color: theme.colors.accent,
+      bold: true,
+      align: "center",
+      maxLines: 1,
+    }),
+    textObject(slide, theme, `${idPrefix}:after`, "metric-after", metric.after, afterBox, {
+      fontSize: baseFontSize * metric.scale,
+      minFontSize: baseFontSize * metric.scale,
+      color: theme.colors.accent,
+      bold: true,
+      align: "center",
+      maxLines: 1,
+    }),
+  ];
 }
 
 function imageObjects(slide: SlidePlan, theme: Theme, assetIds: string[], box: Box): ImageLayoutObject[] {
@@ -570,8 +631,10 @@ function applyEditorialDesign(slide: SlidePlan, theme: Theme, sourceObjects: Lay
     if (dark) {
       const color = object.role === "title" ? colors.white
         : object.role === "source" ? (colors.darkMuted ?? colors.muted)
-          : object.role === "subtitle" ? (colors.accentCyan ?? colors.accent)
-            : (colors.darkBody ?? colors.white);
+        : object.role === "subtitle" ? (colors.accentCyan ?? colors.accent)
+          : object.role === "metric-after" || object.role === "metric-arrow" ? (colors.accentCyan ?? colors.accent)
+            : object.role === "metric-before" || object.role === "metric-label" ? (colors.darkMuted ?? colors.muted)
+        : (colors.darkBody ?? colors.white);
       return { ...object, color };
     }
     return object.role === "title" ? { ...object, color: colors.title } : object;

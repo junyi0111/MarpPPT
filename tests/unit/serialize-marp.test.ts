@@ -120,6 +120,22 @@ describe("serializeMarp", () => {
     expect(source).not.toMatch(/\\\[|\\\]|\\(?:mathrm|frac|sqrt|top)/u);
   });
 
+  it("serializes metric comparisons with a larger after-value emphasis", () => {
+    const plan = makePresentationPlanFixture();
+    plan.slides = [{
+      id: "metric", title: "準確度變化", layout: "takeaway",
+      blocks: [{ id: "score", text: "顯著從32分提升到62分" }],
+      imageIds: [], sourceRefs: ["## 結果"],
+    }];
+    plan.imageAssetIds = [];
+    plan.assetManifest = [];
+    const source = serializeMarp(plan, defaultTheme);
+    expect(source).toContain("顯著提升");
+    expect(source).toContain("font-size:1.5em");
+    expect(source).toContain("32分");
+    expect(source).toContain("62分");
+  });
+
   it("escapes table pipes without creating extra Markdown columns", () => {
     const plan = makePresentationPlanFixture();
     const tableSlide = plan.slides.find((slide) => slide.layout === "table");

@@ -1,5 +1,6 @@
 import { PresentationPlanSchema, type PresentationPlan, type SlidePlan } from "../contracts/presentation-plan.js";
 import { normalizeMathText } from "../content/math-text.js";
+import { parseMetricComparison } from "../content/metric-comparison.js";
 import type { Theme } from "../layout/geometry.js";
 
 const HTML_OR_COMMENT_PATTERN = /<\/?[A-Za-z][A-Za-z0-9:-]*(?:\s[^<>]*)?\/?>|<!--|-->|<![A-Z][^>]*>/i;
@@ -17,6 +18,24 @@ function assertSafeText(value: string, location: string, allowUrlText = false): 
 
 function escapeMarkdown(value: string): string {
   return normalizeMathText(value).replace(MARKDOWN_SPECIAL, "\\$1").replace(/\r?\n/g, "  \n");
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/gu, "&amp;")
+    .replace(/</gu, "&lt;")
+    .replace(/>/gu, "&gt;")
+    .replace(/"/gu, "&quot;")
+    .replace(/'/gu, "&#39;");
+}
+
+function renderBlockText(value: string): string {
+  const metric = parseMetricComparison(value);
+  if (!metric) return escapeMarkdown(value);
+  const context = escapeHtml(metric.context);
+  const before = escapeHtml(metric.before);
+  const after = escapeHtml(metric.after);
+  return `<span style="font-family:inherit;font-size:.8em;font-weight:700;color:#738299">${context}</span> <span style="font-family:inherit">${before}</span> <span style="font-family:inherit;font-weight:700;color:#2F6FED">→</span> <span style="font-family:inherit;font-size:1.5em;font-weight:700;color:#2F6FED">${after}</span>`;
 }
 
 function escapeSourceReference(value: string): string {
@@ -112,28 +131,28 @@ function renderSlide(slide: SlidePlan, plan: PresentationPlan): string {
 
   switch (slide.layout) {
     case "bullets":
-      lines.push("", ...slide.blocks.map((block) => `- ${escapeMarkdown(block.text)}`));
+      lines.push("", ...slide.blocks.map((block) => `- ${renderBlockText(block.text)}`));
       break;
     case "comparison":
       lines.push("", `### ${escapeMarkdown(slide.columns[0].title)}`);
-      lines.push(...slide.columns[0].blocks.map((block) => `- ${escapeMarkdown(block.text)}`));
+      lines.push(...slide.columns[0].blocks.map((block) => `- ${renderBlockText(block.text)}`));
       lines.push("", `### ${escapeMarkdown(slide.columns[1].title)}`);
-      lines.push(...slide.columns[1].blocks.map((block) => `- ${escapeMarkdown(block.text)}`));
+      lines.push(...slide.columns[1].blocks.map((block) => `- ${renderBlockText(block.text)}`));
       break;
     case "table":
       lines.push("", ...renderTable(slide));
-      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => escapeMarkdown(block.text)));
+      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block.text)));
       break;
     case "chart":
       lines.push("", ...renderChart(slide));
-      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => escapeMarkdown(block.text)));
+      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block.text)));
       break;
     case "diagram":
       lines.push("", ...renderDiagram(slide));
-      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => escapeMarkdown(block.text)));
+      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block.text)));
       break;
     default:
-      if ("blocks" in slide && slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => escapeMarkdown(block.text)));
+      if ("blocks" in slide && slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block.text)));
   }
 
   const images = slideImages(slide, plan);

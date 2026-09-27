@@ -63,7 +63,7 @@ function addText(object: TextLayoutObject, context: LayoutObjectContext): void {
     fontSize,
     color: colorStyle(object.color).color,
     bold: object.bold ?? false,
-    align: object.role === "diagram-node" || object.role === "diagram-edge-label" ? "center" : "left",
+    align: object.align ?? (object.role === "diagram-node" || object.role === "diagram-edge-label" ? "center" : "left"),
     margin: 0,
     breakLine: false,
     valign: "mid",

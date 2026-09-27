@@ -564,8 +564,8 @@ export function buildSlideLayout(slide: SlidePlan, theme: Theme): LayoutObject[]
       slide.blocks.forEach((block, index) => {
         const y = area.y + index * (itemH + gap);
         objects.push(shape(slide, `bullet-marker:${block.id}`, { x: 0.68, y: y + 0.25, w: 0.14, h: 0.14 }, { shape: "ellipse", fill: theme.colors.accent }));
-        objects.push(textObject(slide, theme, `${slide.id}:text:${block.id}`, "bullet", block.text, { x: area.x + compactInset, y: y + compactInset, w: area.w - compactInset * 2, h: itemH - compactInset * 2 }, {
-          fontSize: theme.typography.body, minFontSize: theme.typography.minBody,
+        objects.push(...blockObjects(slide, theme, [block], { x: area.x + compactInset, y: y + compactInset, w: area.w - compactInset * 2, h: itemH - compactInset * 2 }, "bullet", {
+          fontSize: theme.typography.body,
         }));
       });
       break;
@@ -663,13 +663,16 @@ function applyEditorialDesign(slide: SlidePlan, theme: Theme, sourceObjects: Lay
     }, colors.accentCyan ?? colors.accent, "#00000000", 0, "rect"));
   }
   if (slide.layout === "bullets") {
-    for (const object of styledObjects) {
-      if (object.kind !== "text" || object.role !== "bullet") continue;
-      const compactInset = theme.spacing?.compact?.inches ?? 0.1;
-      backgroundObjects.push(designShape(slide, `bullet-card:${object.id}`, {
-        x: 0.57, y: object.y - compactInset, w: 12.24, h: Math.max(0.3, object.h + compactInset * 2),
+    const area = { x: 0.92, y: 1.55, w: 11.85, h: 4.95 };
+    const gap = 0.1;
+    const compactInset = theme.spacing?.compact?.inches ?? 0.1;
+    const itemH = (area.h - gap * (slide.blocks.length - 1)) / slide.blocks.length;
+    slide.blocks.forEach((block, index) => {
+      const y = area.y + index * (itemH + gap);
+      backgroundObjects.push(designShape(slide, `bullet-card:${block.id}`, {
+        x: 0.57, y: y - compactInset, w: 12.24, h: Math.max(0.3, itemH + compactInset * 2),
       }, colors.surface, colors.border, 0.55));
-    }
+    });
   } else if (slide.layout === "image-text") {
     backgroundObjects.push(designShape(slide, "image-text-copy-panel", { x: 0.52, y: 1.49, w: 5.52, h: 5.12 }, colors.surface, colors.border, 0.55));
     backgroundObjects.push(designShape(slide, "image-text-image-panel", { x: 6.24, y: 1.49, w: 6.56, h: 5.12 }, colors.surface, colors.border, 0.55));

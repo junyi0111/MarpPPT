@@ -59,4 +59,21 @@ describe("metric comparison parsing", () => {
     expect(arrow && arrow.text).toBe("→");
     expect(context && context.text).toBe("顯著提升");
   });
+
+  it("applies the same emphasis inside a bullet card", () => {
+    const objects = buildSlideLayout({
+      id: "metric-bullet",
+      title: "結果摘要",
+      layout: "bullets",
+      blocks: [
+        { id: "score", text: "顯著從32分提升到62分" },
+        { id: "other", text: "保留測試條件" },
+        { id: "third", text: "持續追蹤" },
+      ],
+      imageIds: [],
+      sourceRefs: ["## 結果"],
+    }, loadDefaultTheme());
+    expect(objects.some((object) => object.kind === "text" && object.role === "metric-after" && object.text === "62分")).toBe(true);
+    expect(objects.some((object) => object.kind === "shape" && object.id.endsWith(":bullet-card:score"))).toBe(true);
+  });
 });

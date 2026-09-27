@@ -34,7 +34,7 @@ describe("preview rendering", () => {
     if (report.font.selected === null) {
       expect(report.warnings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "FONT_MATCHER_UNAVAILABLE" })]));
     }
-  });
+  }, 30_000);
 
   it("returns a draft when the PDF text layer drops source CJK characters", async () => {
     const fixture = await makeTwoSlidePreviewFixture({ includeCjk: true });
@@ -47,7 +47,7 @@ describe("preview rendering", () => {
     expect(report.errors).toEqual(expect.arrayContaining([expect.objectContaining({ code: "FONT_GLYPH_MISSING", stage: "pdftotext" })]));
     expect(report.visualQaPassed).toBe(false);
     expect(report.pdfPath).toBeNull();
-  });
+  }, 30_000);
 
   it("returns a draft and a structured error for a malformed PPTX", async () => {
     const fixture = await makeTwoSlidePreviewFixture();

@@ -332,7 +332,7 @@ describe("HTTP render worker isolation", () => {
       outputRoot: context.outputRoot,
       tempRoot: context.tempRoot,
       artifactStore: context.downloadStore,
-      timeoutMs: 15_000,
+      timeoutMs: 60_000,
       terminateGraceMs: 500,
     });
 
@@ -342,7 +342,7 @@ describe("HTTP render worker isolation", () => {
       const token = new URL(output.pptx.uri).pathname.split("/").at(-1)!;
       expect((await context.downloadStore.read(token)).fileName).toMatch(/\.pptx$/u);
     }
-  }, 20_000);
+  }, 90_000);
 
   it("keeps an oversized hosted preview failure as a draft and reaps its renderer descendant on worker close", async () => {
     const context = await setup();

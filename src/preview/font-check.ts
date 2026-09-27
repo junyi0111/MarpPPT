@@ -61,7 +61,11 @@ export function assessGlyphCoverage(sourcePptxBytes: Uint8Array, extractedPdfTex
 export async function countTofuGlyphs(pngPaths: string[]): Promise<number> {
   let count = 0;
   for (const path of pngPaths) {
-    const { data, info } = await sharp(path).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    // Downsample before connected-component analysis.  A preview page can be
+    // ~1.5M pixels wide; glyph geometry remains distinguishable at 960 px and
+    // the bounded pass keeps large decks from spending most of the render
+    // budget in this diagnostic check.
+    const { data, info } = await sharp(path).resize({ width: 960, fit: "inside", withoutEnlargement: true }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     const width = info.width;
     const height = info.height;
     const pixelValue = (x: number, y: number): number => {

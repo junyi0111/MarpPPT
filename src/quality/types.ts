@@ -27,7 +27,7 @@ export interface QualityReport {
   checks: Record<"package" | "layout" | "preview" | "editorial" | "accessibility" | "powerpoint", QualityCheck>;
 }
 
-export type PreflightCommandName = "soffice" | "pdfinfo" | "pdftoppm" | "fc-match";
+export type PreflightCommandName = "soffice" | "pdfinfo" | "pdftoppm" | "pdftotext" | "fc-match";
 
 export interface LocalPreflightReport {
   status: Extract<CheckStatus, "passed" | "failed" | "partial">;
@@ -46,7 +46,7 @@ export interface LocalPreflightReport {
     directory: boolean;
     writable: boolean;
   };
-  renderers: Record<"soffice" | "pdfinfo" | "pdftoppm", { available: boolean }>;
+  renderers: Record<"soffice" | "pdfinfo" | "pdftoppm" | "pdftotext", { available: boolean }>;
   font: {
     requested: string;
     matched: string | null;

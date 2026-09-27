@@ -15,7 +15,10 @@ describe("preview rendering", () => {
   it("returns one rendered page for each slide and builds a contact sheet", async () => {
     const fixture = await makeTwoSlidePreviewFixture();
     tempDirectories.push(fixture.tempDirectory);
-    const report = await renderPreview(fixture.twoSlidePptxPath, fixture.tempDirectory);
+    const allCjkCharacters = "process.stdout.write(String.fromCodePoint(...Array.from({ length: 0x9fff - 0x3400 + 1 }, (_, index) => 0x3400 + index)))";
+    const report = await renderPreview(fixture.twoSlidePptxPath, fixture.tempDirectory, {
+      commands: { pdftotext: { file: process.execPath, args: ["-e", allCjkCharacters, "--"] } },
+    });
 
     expect(report.status).toBe("ready");
     expect(report.slideCount).toBe(2);
@@ -31,6 +34,19 @@ describe("preview rendering", () => {
     if (report.font.selected === null) {
       expect(report.warnings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "FONT_MATCHER_UNAVAILABLE" })]));
     }
+  });
+
+  it("returns a draft when the PDF text layer drops source CJK characters", async () => {
+    const fixture = await makeTwoSlidePreviewFixture();
+    tempDirectories.push(fixture.tempDirectory);
+    const report = await renderPreview(fixture.twoSlidePptxPath, fixture.tempDirectory, {
+      commands: { pdftotext: { file: process.execPath, args: ["-e", "process.stdout.write('no cjk glyphs')", "--"] } },
+    });
+
+    expect(report.status).toBe("draft");
+    expect(report.errors).toEqual(expect.arrayContaining([expect.objectContaining({ code: "FONT_GLYPH_MISSING", stage: "pdftotext" })]));
+    expect(report.visualQaPassed).toBe(false);
+    expect(report.pdfPath).toBeNull();
   });
 
   it("returns a draft and a structured error for a malformed PPTX", async () => {

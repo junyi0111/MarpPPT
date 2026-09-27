@@ -19,6 +19,8 @@ Codex 的明確呼叫是 `$marp-ppt`。一般「把 Markdown 做成 PPTX／Power
 2. 解析 Markdown 標題、段落、條列、表格與圖片引用，記錄可追溯的來源位置。收集本次對話圖片和使用者明確指定沿用的先前對話圖片，為每張建映射；每張圖片至少置入一頁，無適當語意位置時放附圖頁。若沒有圖片，`imageFiles: []` 且 `imageAssetIds: []`，計畫的兩個圖片清單也為空。
 3. 若使用者同時提供學術 PDF，依套件內的 [production-quality.md](references/production-quality.md) 工作流，用本套件附帶的 Poppler 擷取器讀取頁碼與文字；核對公式、指標定義、表格數字與引用頁碼。文字擷取不清楚表格、公式或圖示時，將該頁轉成影像再目視核對。PDF 是條件式參考來源，不取代 Markdown；不可讀取或無法定位時，標示未核實，不要自行補值。所有原始 Markdown 與圖片先交給套件的私密 staging 程式建立工作副本，不覆寫原件；附圖逐張檢查、建立 manifest，必要時只在副本上做不改變長寬比例的處理。
 4. 從來源和對話要求建立符合 `PresentationPlan` 的唯一計畫：`version: 1`、標題、語言、`themeId: default`、來源原始位元組 SHA-256 `sourceDigest`、`slides`、`imageAssetIds`、`assetManifest`。每頁一個主訊息，有唯一 ID、受控版型、可編輯的文字／圖表／表格／圖形資料，內容頁有精確 `sourceRefs`。清單中的每個圖片 ID 都要有同 ID 的 manifest 紀錄（原檔名、MIME、位元組數、SHA-256），每個引用都要指到清單內的 ID。最多 60 頁、30 張 PNG/JPEG；來源上限 2 MiB，單圖 10 MiB，總附件 50 MiB。內文文字與底層圖形預設每側留 0.4–0.6 公分，資訊密集時可用 0.2–0.3 公分，封面或金句至少留 0.8 公分；表格依表頭、分類欄、數值欄與敘述欄規範排版。版型細節和溢出準則見 [layout-contract.md](references/layout-contract.md)。 圖片比例、文字垂直置中與字體選用都是輸出硬性版面條件，必須同時套用於 PPTX 與預覽。
+   - 公式若使用 `\\[...]`、`$$...$$`、`\\(...)` 或常見 LaTeX 命令，必須在計畫進入渲染前轉成可讀的純文字表示；不得把 `\\mathrm`、`\\frac`、`\\sqrt` 等控制字串直接交給 PPTX。
+   - 流程圖、架構圖與因果圖的節點和箭頭標籤必須來自來源中的術語或明確摘要。把「圖示建議」轉成 2–5 個具名節點與有意義的關係；只有抽象建議時，使用標示「示意」的解釋區塊，不製造假連線。禁止 `...`、`…`、`TBD`、`TODO`、`待補`、`placeholder` 等佔位標籤。
 5. `sourceFile.assetId` 與 `imageFiles[].assetId` 是 staging 回傳的 `stage:` 開頭不透明引用，只供附件解析器讀取。另為每張圖分配穩定、安全的簡報 ID，例如 `image-1`，按 `imageFiles` 順序放入頂層 `imageAssetIds`，並與 `plan.imageAssetIds`、`plan.assetManifest[].assetId` 及各頁 `imageIds` 對應。簡報 ID 只用英數、`_`、`-`，由英數開頭，最長 120 字元。不能把 staging CLI 輸出的探針用 `imageAssetIds` 原樣傳給正式工具。
 6. 在正式渲染前執行 `node scripts/preflight.mjs <絕對輸出目錄>` 或等效的 `runLocalPreflight`。缺 Node 版本、MCP 入口、LibreOffice／Poppler、輸出寫入權限或實際 `Noto Sans CJK TC` family 時，先回報具體缺項，不開始完整製作。
 7. 同一次全稿規劃建立可選的 `editorialBrief`，把觀眾、目的、頁數、每頁主訊息、證據行範圍、必留事實、圖片映射與版型語意放在一起。細節規範見 [editorial-workflow.md](references/editorial-workflow.md)。若 brief 存在，正式 MCP 會先檢查 sourceDigest、行範圍、slideId／factId／assetId、頁數與必留畫面事實；檢查不通過就停止，不把錯誤留到 PPTX 才發現。
@@ -33,6 +35,7 @@ Codex 的明確呼叫是 `$marp-ppt`。一般「把 Markdown 做成 PPTX／Power
 
 - `SOURCE_MISSING`：請補 `.md`；`ATTACHMENT_UNREADABLE`：指出需宿主授權且可讀的原附件，重新取得／暫存；`INPUT_LIMIT_EXCEEDED`：指出上限並請減少附件或內容；`IMAGE_INVALID`：請換有效 PNG/JPEG。缺檔、矛盾或無法兼顧的硬要求先詢問，不能用猜測完成。
 - `REFERENCE_MISSING`、`PLAN_INVALID`：修正受影響的來源引用、manifest、圖片映射或計畫欄位再送出。`SPLIT_REQUIRED`、`SUMMARY_REQUIRED`、`LAYOUT_OVERFLOW`：依回傳的受影響頁與物件，拆頁、縮短可摘要內容或換受控版型；保留必留事實與所有明確要求保留的數字。對受影響內容最多兩次有目標的計畫修訂與重試，仍失敗就回報未完成，不用縮小字體硬塞。
+- `FONT_GLYPH_MISSING`：把它視為阻擋交付的預覽錯誤；即使 PDF 文字層仍能擷取 CJK，也要修正實際字型或改用已確認可渲染的字型後重試。`FONT_GLYPH_CHECK_UNAVAILABLE`：只能交付未驗證草稿，先補 `pdftotext` 或等效的本機 PDF 文字檢查工具。
 - `RENDER_FAILED`：依 `retryable` 和 `userAction` 做至多一次同輸入重試，仍失敗就停止；`ARTIFACT_UNOPENABLE`：檢查輸出儲存依賴，不能回報檔案已可開啟。任何未列出的失敗碼，也按 `stage`、`retryable` 和 `userAction` 告知具體下一步，不宣稱完成。
 
 成功時先確認 `validation.pptx.contentTypeOverridesValid === true`、`validation.pptx.relationshipsValid === true` 及 `validation.pptx.slideBoundsValid === true`。封裝驗證必須確認 `[Content_Types].xml` 的每筆 `<Override PartName>` 都指向 ZIP 內存在的項目，並確認每個內部 `.rels` 目標都存在；任何一項失敗都不得交付為完成版。

@@ -6,6 +6,7 @@ import type {
   TableData,
   TextBlock,
 } from "../contracts/presentation-plan.js";
+import { normalizeMathText } from "../content/math-text.js";
 import { getTextBox, type Box, type Theme } from "./geometry.js";
 
 export type TextRole = "title" | "subtitle" | "body" | "bullet" | "comparison-heading" | "diagram-node" | "diagram-edge-label" | "source" | "label";
@@ -98,7 +99,7 @@ function textObject(
     slideId: slide.id,
     ...box,
     role,
-    text,
+    text: normalizeMathText(text),
     fontFace: theme.typography.fontFace,
     fontSize: options.fontSize ?? (note ? theme.typography.note : theme.typography.body),
     minFontSize: options.minFontSize ?? (note ? theme.typography.minNote : theme.typography.minBody),
@@ -383,7 +384,14 @@ function chartObject(slide: Extract<SlidePlan, { layout: "chart" }>, theme: Them
   const inset = theme.spacing?.comfortable?.inches ?? 0.2;
   const captionReserve = slide.blocks?.length ? 0.78 : 0;
   const { kind: chartKind, ...data } = chart;
-  return { kind: "chart", id: `${slide.id}:chart`, slideId: slide.id, x: box.x + inset, y: box.y + inset, w: box.w - inset * 2, h: box.h - inset * 2 - captionReserve, ...data, chartKind };
+  return {
+    kind: "chart", id: `${slide.id}:chart`, slideId: slide.id,
+    x: box.x + inset, y: box.y + inset, w: box.w - inset * 2, h: box.h - inset * 2 - captionReserve,
+    ...data,
+    labels: data.labels.map(normalizeMathText),
+    series: data.series.map((series) => ({ ...series, name: normalizeMathText(series.name) })),
+    chartKind,
+  };
 }
 
 function tableObject(slide: Extract<SlidePlan, { layout: "table" }>, theme: Theme, table: TableData): TableLayoutObject {
@@ -439,6 +447,8 @@ function tableObject(slide: Extract<SlidePlan, { layout: "table" }>, theme: Them
     slideId: slide.id,
     ...tableBox,
     ...table,
+    columns: table.columns.map(normalizeMathText),
+    rows: table.rows.map((row) => row.map(normalizeMathText)),
     fontFace: theme.typography.fontFace,
     fontSize: theme.typography.body,
     minFontSize: theme.typography.minBody,
@@ -568,6 +578,12 @@ function applyEditorialDesign(slide: SlidePlan, theme: Theme, sourceObjects: Lay
   });
   const backgroundObjects: LayoutObject[] = [];
   if (dark) {
+    backgroundObjects.push(designShape(slide, "dark-background", {
+      x: theme.safeArea.left,
+      y: theme.safeArea.top,
+      w: Math.round((theme.canvas.width - theme.safeArea.left - theme.safeArea.right) * 1000) / 1000,
+      h: Math.round((theme.canvas.height - theme.safeArea.top - theme.safeArea.bottom) * 1000) / 1000,
+    }, colors.darkBackground ?? colors.title, "#00000000", 0, "rect"));
     const title = styledObjects.find((object): object is TextLayoutObject => object.kind === "text" && object.role === "title");
     if (title) {
       const spaciousInset = theme.spacing?.spaciousMinInches ?? 0.315;

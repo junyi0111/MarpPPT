@@ -23,7 +23,10 @@ interface CommandResult {
 
 function defaultCommand(name: PreflightCommandName): RendererCommand {
   if (name === "fc-match") return { file: process.env.MARPPPT_FCMATCH || "fc-match", args: ["-f", "%{family}\\n", DEFAULT_FONT] };
-  const variable = name === "soffice" ? "MARPPPT_SOFFICE" : name === "pdfinfo" ? "MARPPPT_PDFINFO" : "MARPPPT_PDFTOPPM";
+  const variable = name === "soffice" ? "MARPPPT_SOFFICE"
+    : name === "pdfinfo" ? "MARPPPT_PDFINFO"
+      : name === "pdftoppm" ? "MARPPPT_PDFTOPPM"
+        : "MARPPPT_PDFTOTEXT";
   return { file: process.env[variable] || name, args: name === "soffice" ? ["--version"] : ["-v"] };
 }
 
@@ -92,7 +95,7 @@ export async function runLocalPreflight(options: LocalPreflightOptions): Promise
   const mcp = { entrypoint, available: mcpAvailable };
   if (!mcpAvailable) issues.push(issue("MCP_ENTRYPOINT_MISSING", "找不到已建置的 MCP 入口，不能宣稱安裝後可直接使用。", "先執行套件建置並確認 dist/mcp/stdio.js 存在。"));
 
-  const rendererNames = ["soffice", "pdfinfo", "pdftoppm"] as const;
+  const rendererNames = ["soffice", "pdfinfo", "pdftoppm", "pdftotext"] as const;
   const rendererResults = await Promise.all(rendererNames.map(async (name) => [name, await runCommand(options.commands?.[name] ?? defaultCommand(name), timeoutMs)] as const));
   const renderers = Object.fromEntries(rendererResults.map(([name, result]) => [name, { available: result.ok }])) as LocalPreflightReport["renderers"];
   for (const [name, result] of rendererResults) if (!result.ok) issues.push(issue(`${name.toUpperCase()}_MISSING`, `找不到或無法執行 ${name}，無法完成正式預覽驗證。`, `請安裝 ${name}，或在目前環境先使用草稿模式。`));

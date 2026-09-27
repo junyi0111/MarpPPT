@@ -6,19 +6,21 @@ import { pathToFileURL } from "node:url";
 import { strFromU8, unzipSync } from "fflate";
 import { inspectPptx, type PptxInspection } from "../pptx/render-pptx.js";
 import { createContactSheet } from "./contact-sheet.js";
+import { assessGlyphCoverage, countTofuGlyphs } from "./font-check.js";
 
 const MAX_TIMEOUT_MS = 60_000;
 const STDERR_LIMIT = 4096;
 const EXEC_MAX_BUFFER = 256 * 1024;
 const DEFAULT_FONT = "Noto Sans CJK TC";
-const COMMAND_ENV: Record<"soffice" | "pdfinfo" | "pdftoppm" | "fc-match", string> = {
+const COMMAND_ENV: Record<"soffice" | "pdfinfo" | "pdftoppm" | "pdftotext" | "fc-match", string> = {
   soffice: "MARPPPT_SOFFICE",
   pdfinfo: "MARPPPT_PDFINFO",
   pdftoppm: "MARPPPT_PDFTOPPM",
+  pdftotext: "MARPPPT_PDFTOTEXT",
   "fc-match": "MARPPPT_FC_MATCH",
 };
 
-export type PreviewStage = "input" | "pptx" | "soffice" | "pdf" | "pdfinfo" | "pdftoppm" | "pages" | "contact-sheet" | "fc-match";
+export type PreviewStage = "input" | "pptx" | "soffice" | "pdf" | "pdfinfo" | "pdftoppm" | "pdftotext" | "pages" | "contact-sheet" | "fc-match";
 export type PreviewIssueCode =
   | "PREVIEW_INVALID_INPUT"
   | "PPTX_INVALID"
@@ -30,6 +32,8 @@ export type PreviewIssueCode =
   | "PREVIEW_CLEANUP_FAILED"
   | "FONT_MATCHER_UNAVAILABLE"
   | "FONT_SUBSTITUTED"
+  | "FONT_GLYPH_MISSING"
+  | "FONT_GLYPH_CHECK_UNAVAILABLE"
   | "CONTACT_SHEET_FAILED";
 
 export interface PreviewIssue {
@@ -65,7 +69,7 @@ export interface PreviewCommand {
 }
 
 export interface PreviewOptions {
-  commands?: Partial<Record<"soffice" | "pdfinfo" | "pdftoppm" | "fc-match", PreviewCommand>>;
+  commands?: Partial<Record<"soffice" | "pdfinfo" | "pdftoppm" | "pdftotext" | "fc-match", PreviewCommand>>;
   timeoutMs?: number;
   signal?: AbortSignal;
   /** When set, renderer subprocesses inherit the caller's process group (hosted worker only). */
@@ -322,7 +326,7 @@ export async function renderPreview(pptxPath: string, workDir: string, options: 
   }
 
   const remainingMs = (): number => Math.max(0, deadline - Date.now());
-  const execute = async (stage: PreviewStage, key: "soffice" | "pdfinfo" | "pdftoppm" | "fc-match", standardArgs: string[]): Promise<CommandResult | undefined> => {
+  const execute = async (stage: PreviewStage, key: "soffice" | "pdfinfo" | "pdftoppm" | "pdftotext" | "fc-match", standardArgs: string[]): Promise<CommandResult | undefined> => {
     const command = options.commands?.[key] ?? { file: process.env[COMMAND_ENV[key]] || key };
     try {
       return await runCommand(command.file, [...(command.args ?? []), ...standardArgs], remainingMs(), options.signal, options.processGroupId);
@@ -451,6 +455,30 @@ export async function renderPreview(pptxPath: string, workDir: string, options: 
       }
     } else {
       report.warnings.push({ code: "FONT_MATCHER_UNAVAILABLE", stage: "fc-match", message: "fontconfig returned no selected font family." });
+    }
+  }
+
+  const extractedText = await execute("pdftotext", "pdftotext", ["-layout", pdfPath, "-"]);
+  if (!extractedText) {
+    const lastError = report.errors.at(-1);
+    if (lastError?.stage === "pdftotext") {
+      report.errors.pop();
+      report.warnings.push({
+        code: "FONT_GLYPH_CHECK_UNAVAILABLE",
+        stage: "pdftotext",
+        message: "pdftotext is unavailable; CJK glyph coverage was not verified and this preview must be treated as unverified.",
+        ...(lastError.stderr ? { stderr: lastError.stderr } : {}),
+      });
+    }
+  } else {
+    const coverage = assessGlyphCoverage(input.bytes, extractedText.stdout);
+    const tofuGlyphs = coverage.requiredCharacters.length > 0 ? await countTofuGlyphs(report.pngPaths) : 0;
+    if (coverage.requiredCharacters.length > 0 && (coverage.coverage < 0.9 || coverage.replacementCharacterFound || tofuGlyphs > 0)) {
+      addError(report, {
+        code: "FONT_GLYPH_MISSING",
+        stage: "pdftotext",
+        message: `CJK glyph verification failed: PDF text coverage is ${(coverage.coverage * 100).toFixed(1)}%, detected ${tofuGlyphs} hollow replacement glyph(s); missing: ${coverage.missingCharacters.slice(0, 12).join("、") || "none"}.`,
+      });
     }
   }
 

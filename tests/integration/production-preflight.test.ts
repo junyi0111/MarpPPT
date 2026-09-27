@@ -21,6 +21,7 @@ describe("production preflight", () => {
         soffice: command("LibreOffice 25"),
         pdfinfo: command("pdfinfo version 25"),
         pdftoppm: command("pdftoppm version 25"),
+        pdftotext: command("pdftotext version 25"),
         "fc-match": command("Noto Sans CJK TC"),
       },
     });
@@ -38,12 +39,13 @@ describe("production preflight", () => {
         soffice: command("", 1),
         pdfinfo: command("", 1),
         pdftoppm: command("", 1),
+        pdftotext: command("", 1),
         "fc-match": command("Liberation Sans"),
       },
     });
     expect(report.status).toBe("failed");
     expect(report.issues.map((entry) => entry.code)).toEqual(expect.arrayContaining([
-      "MCP_ENTRYPOINT_MISSING", "SOFFICE_MISSING", "PDFINFO_MISSING", "PDFTOPPM_MISSING", "FONT_NOT_MATCHED",
+      "MCP_ENTRYPOINT_MISSING", "SOFFICE_MISSING", "PDFINFO_MISSING", "PDFTOPPM_MISSING", "PDFTOTEXT_MISSING", "FONT_NOT_MATCHED",
     ]));
   });
 });

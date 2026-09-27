@@ -14,6 +14,12 @@ const textBlockSchema = z.object({
   text: nonEmpty,
 }).strict();
 
+const DIAGRAM_PLACEHOLDER_PATTERN = /^(?:\.\.\.|…|tbd|todo|待補|placeholder)$/iu;
+
+export function isDiagramPlaceholderLabel(value: string): boolean {
+  return DIAGRAM_PLACEHOLDER_PATTERN.test(value.trim());
+}
+
 const imageIdListSchema = z.array(idSchema).max(MAX_IMAGES).superRefine((ids, ctx) => {
   const seen = new Set<string>();
   ids.forEach((id, index) => {
@@ -81,12 +87,26 @@ const diagramDataSchema = z.object({
 }).strict().superRefine((diagram, ctx) => {
   const nodeIds = new Set<string>();
   diagram.nodes.forEach((node, index) => {
+    if (isDiagramPlaceholderLabel(node.label)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["nodes", index, "label"],
+        message: "Diagram node labels must carry source meaning; replace the placeholder with a concise semantic label.",
+      });
+    }
     if (nodeIds.has(node.id)) {
       ctx.addIssue({ code: "custom", path: ["nodes", index, "id"], message: `Duplicate diagram node ID: ${node.id}` });
     }
     nodeIds.add(node.id);
   });
   diagram.edges.forEach((edge, index) => {
+    if (edge.label !== undefined && isDiagramPlaceholderLabel(edge.label)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["edges", index, "label"],
+        message: "Diagram edge labels must carry source meaning; replace the placeholder with a concise semantic label.",
+      });
+    }
     if (!nodeIds.has(edge.from)) {
       ctx.addIssue({ code: "custom", path: ["edges", index, "from"], message: `Unknown diagram node: ${edge.from}` });
     }

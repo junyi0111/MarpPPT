@@ -168,6 +168,48 @@ describe("PresentationPlanSchema", () => {
     }
   });
 
+  it("rejects placeholder diagram labels while allowing concise semantic labels", () => {
+    for (const placeholder of ["...", "…", "TBD", "TODO", "待補", "placeholder"]) {
+      const nodeResult = PresentationPlanSchema.safeParse({
+        ...validMixedDeck,
+        slides: [{
+          id: "diagram-placeholder-node", title: "流程", layout: "diagram",
+          diagram: {
+            nodes: [{ id: "a", label: placeholder }, { id: "b", label: "輸出" }],
+            edges: [{ from: "a", to: "b", label: "轉換" }],
+          },
+          imageIds: [], sourceRefs: ["## 流程"],
+        }],
+      });
+      expect(nodeResult.success, placeholder).toBe(false);
+
+      const edgeResult = PresentationPlanSchema.safeParse({
+        ...validMixedDeck,
+        slides: [{
+          id: "diagram-placeholder-edge", title: "流程", layout: "diagram",
+          diagram: {
+            nodes: [{ id: "a", label: "輸入" }, { id: "b", label: "輸出" }],
+            edges: [{ from: "a", to: "b", label: placeholder }],
+          },
+          imageIds: [], sourceRefs: ["## 流程"],
+        }],
+      });
+      expect(edgeResult.success, placeholder).toBe(false);
+    }
+
+    expect(PresentationPlanSchema.safeParse({
+      ...validMixedDeck,
+      slides: [{
+        id: "diagram-short-labels", title: "流程", layout: "diagram",
+        diagram: {
+          nodes: [{ id: "q", label: "Q" }, { id: "v", label: "輸入" }],
+          edges: [{ from: "q", to: "v", label: "加權" }],
+        },
+        imageIds: [], sourceRefs: ["## 流程"],
+      }],
+    }).success).toBe(true);
+  });
+
   it("rejects duplicate IDs, empty object text, and titles beyond the supported limit", () => {
     expect(PresentationPlanSchema.safeParse({
       ...validMixedDeck,

@@ -105,6 +105,21 @@ describe("serializeMarp", () => {
     expect(source).toContain("literal \\*emphasis\\* and \\[brackets\\]");
   });
 
+  it("downgrades LaTeX formulas before serializing Marp text", () => {
+    const plan = makePresentationPlanFixture();
+    plan.slides = [{
+      id: "formula", title: "注意力公式", layout: "takeaway",
+      blocks: [{ id: "formula-text", text: String.raw`\[\mathrm{Attention}(Q,K,V)=\mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V\]` }],
+      imageIds: [], sourceRefs: ["## 公式"],
+    }];
+    plan.imageAssetIds = [];
+    plan.assetManifest = [];
+    const source = serializeMarp(plan, defaultTheme);
+    expect(source).toContain("Attention\\(Q,K,V");
+    expect(source).toContain("QKᵀ");
+    expect(source).not.toMatch(/\\\[|\\\]|\\(?:mathrm|frac|sqrt|top)/u);
+  });
+
   it("escapes table pipes without creating extra Markdown columns", () => {
     const plan = makePresentationPlanFixture();
     const tableSlide = plan.slides.find((slide) => slide.layout === "table");

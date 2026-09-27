@@ -1,4 +1,5 @@
 import { PresentationPlanSchema, type PresentationPlan, type SlidePlan } from "../contracts/presentation-plan.js";
+import { normalizeMathText } from "../content/math-text.js";
 import type { Theme } from "../layout/geometry.js";
 
 const HTML_OR_COMMENT_PATTERN = /<\/?[A-Za-z][A-Za-z0-9:-]*(?:\s[^<>]*)?\/?>|<!--|-->|<![A-Z][^>]*>/i;
@@ -15,7 +16,7 @@ function assertSafeText(value: string, location: string, allowUrlText = false): 
 }
 
 function escapeMarkdown(value: string): string {
-  return value.replace(MARKDOWN_SPECIAL, "\\$1").replace(/\r?\n/g, "  \n");
+  return normalizeMathText(value).replace(MARKDOWN_SPECIAL, "\\$1").replace(/\r?\n/g, "  \n");
 }
 
 function escapeSourceReference(value: string): string {

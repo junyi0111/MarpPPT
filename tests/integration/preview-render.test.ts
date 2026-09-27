@@ -37,7 +37,7 @@ describe("preview rendering", () => {
   });
 
   it("returns a draft when the PDF text layer drops source CJK characters", async () => {
-    const fixture = await makeTwoSlidePreviewFixture();
+    const fixture = await makeTwoSlidePreviewFixture({ includeCjk: true });
     tempDirectories.push(fixture.tempDirectory);
     const report = await renderPreview(fixture.twoSlidePptxPath, fixture.tempDirectory, {
       commands: { pdftotext: { file: process.execPath, args: ["-e", "process.stdout.write('no cjk glyphs')", "--"] } },

@@ -9,7 +9,7 @@
   <a href="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml"><img alt="建置與封裝驗證" src="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT 授權" src="https://img.shields.io/badge/license-MIT-2563EB.svg"></a>
   <img alt="Node.js 22 以上" src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white">
-  <img alt="套件版本 0.2.1" src="https://img.shields.io/badge/package-0.2.1-6D5EF7">
+  <img alt="套件版本 0.2.2" src="https://img.shields.io/badge/package-0.2.2-6D5EF7">
   <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="最近更新" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=last%20update"></a>
 </p>
 
@@ -101,7 +101,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-這會建置 TypeScript、套用維護中的簡報覆寫、驗證 Plugin 封裝，並產生 `runtime/marpppt-0.2.1-local-candidate.zip`。封裝不含 `node_modules`、測試、TypeScript 原始碼、本機執行資料或環境檔；解壓後需安裝依賴。
+這會建置 TypeScript、套用維護中的簡報覆寫、驗證 Plugin 封裝，並產生 `runtime/marpppt-0.2.2-local-candidate.zip`。封裝不含 `node_modules`、測試、TypeScript 原始碼、本機執行資料或環境檔；解壓後需安裝依賴。
 
 其他開發指令：
 

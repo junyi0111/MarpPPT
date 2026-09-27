@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2] - 2026-09-27
+
+### Added
+
+- Add the local stdio MCP `ensure_font` tool for checking and installing missing CJK font themes into the current user's font directory.
+- Add post-install font verification and Skill guidance that retries preflight before rendering.
+- Keep remote HTTP MCP instances closed to host file installation; unsupported platforms receive a manual installation action.
+
 ## [0.2.1] - 2026-09-26
 
 ### Fixed

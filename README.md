@@ -9,7 +9,7 @@
   <a href="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml"><img alt="Build and package validation" src="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2563EB.svg"></a>
   <img alt="Node.js 22 or later" src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white">
-  <img alt="Package version 0.2.1" src="https://img.shields.io/badge/package-0.2.1-6D5EF7">
+  <img alt="Package version 0.2.2" src="https://img.shields.io/badge/package-0.2.2-6D5EF7">
   <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="Latest commit" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=last%20update"></a>
 </p>
 
@@ -101,7 +101,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-This builds the TypeScript, applies the maintained presentation overrides, validates the plugin package, and writes `runtime/marpppt-0.2.1-local-candidate.zip`. The archive excludes `node_modules`, tests, TypeScript source, local runtime data, and environment files. Install dependencies after extracting it.
+This builds the TypeScript, applies the maintained presentation overrides, validates the plugin package, and writes `runtime/marpppt-0.2.2-local-candidate.zip`. The archive excludes `node_modules`, tests, TypeScript source, local runtime data, and environment files. Install dependencies after extracting it.
 
 Other development commands:
 

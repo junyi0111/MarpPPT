@@ -6,6 +6,16 @@ const mimeTypeSchema = z.string().trim().min(1).max(128);
 const assetIdSchema = z.string().trim().min(1).max(512);
 const languageSchema = z.string().regex(/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/u, "Expected a language tag such as zh-TW.");
 
+const authorizedDownloadUrlSchema = z.string().trim().min(1).max(4_096).url()
+  .refine((value) => {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === "https:" && !parsed.username && !parsed.password && !parsed.hash;
+    } catch {
+      return false;
+    }
+  }, "Authorized file URLs must use HTTPS without credentials or fragments.");
+
 const stagedFileReferenceSchema = z.object({
   fileName: fileNameSchema,
   mimeType: mimeTypeSchema,
@@ -17,7 +27,7 @@ const authorizedFileReferenceSchema = z.object({
   fileId: z.string().trim().min(1).max(512),
   fileName: fileNameSchema,
   mimeType: mimeTypeSchema,
-  downloadUrl: z.string().trim().min(1).max(4_096).url(),
+  downloadUrl: authorizedDownloadUrlSchema,
 }).strict();
 
 export const SourceFileReferenceSchema = z.union([stagedFileReferenceSchema, authorizedFileReferenceSchema]);

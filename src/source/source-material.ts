@@ -9,6 +9,8 @@ import { extractPdfText as extractPdfTextDefault, PdfTextError, MAX_PDF_BYTES } 
 export const MAX_SOURCE_RESPONSE_BYTES = 8 * 1024 * 1024;
 export const MAX_SOURCE_CONTEXT_BYTES = 2 * 1024 * 1024;
 export const SOURCE_FETCH_TIMEOUT_MS = 15_000;
+const PREPARED_CONTEXT_TTL_MS = 30 * 60 * 1_000;
+const MAX_PREPARED_CONTEXTS = 256;
 
 export interface SourceHttpResponse {
   status: number;
@@ -47,6 +49,39 @@ export interface PreparedSourceMaterial {
   sources: PreparedSource[];
   failures: SourceFailure[];
   warnings: string[];
+}
+
+export interface PreparedSourceContext {
+  sourceIds: ReadonlySet<string>;
+  options: MarkdownDraftOptions;
+  expiresAt: number;
+}
+
+const preparedContexts = new Map<string, PreparedSourceContext>();
+
+/** Keep only the opaque binding needed by the draft publisher, never source text. */
+export function rememberPreparedSourceMaterial(output: PreparedSourceMaterial): void {
+  if (output.sources.length === 0) return;
+  while (preparedContexts.size >= MAX_PREPARED_CONTEXTS) {
+    const oldest = preparedContexts.keys().next().value;
+    if (typeof oldest !== "string") break;
+    preparedContexts.delete(oldest);
+  }
+  preparedContexts.set(output.jobId, {
+    sourceIds: new Set(output.sources.map((source) => source.id)),
+    options: output.options,
+    expiresAt: Date.now() + PREPARED_CONTEXT_TTL_MS,
+  });
+}
+
+export function getPreparedSourceContext(jobId: string): PreparedSourceContext | undefined {
+  const context = preparedContexts.get(jobId);
+  if (!context) return undefined;
+  if (context.expiresAt <= Date.now()) {
+    preparedContexts.delete(jobId);
+    return undefined;
+  }
+  return context;
 }
 
 function header(response: SourceHttpResponse, name: string): string | undefined {
@@ -317,7 +352,7 @@ export async function prepareSourceMaterial(input: unknown, dependencies: Source
   const sourceDigest = sources.length === 0 ? null : createHash("sha256")
     .update(JSON.stringify({ options: parsed.options, sources: sources.map(({ id, kind, title, locator, pageRange, content }) => ({ id, kind, title, locator, pageRange, content })) }))
     .digest("hex");
-  return {
+  const output: PreparedSourceMaterial = {
     status: sources.length === 0 ? "failed" : failures.length > 0 ? "partial" : "ready",
     jobId,
     options: parsed.options,
@@ -326,4 +361,6 @@ export async function prepareSourceMaterial(input: unknown, dependencies: Source
     failures,
     warnings: failures.length > 0 ? ["Some requested sources could not be prepared; do not infer their missing content."] : [],
   };
+  rememberPreparedSourceMaterial(output);
+  return output;
 }

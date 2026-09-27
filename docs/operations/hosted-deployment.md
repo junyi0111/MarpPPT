@@ -29,7 +29,7 @@ This is an HTTP render-work deadline, not a deadline for the full network reques
 | `PORT` | default `8080` | Integer TCP port from 1 through 65535. |
 | `PPTX_OUTPUT_ROOT` | required | Absolute path below `/`; the service creates or verifies a real directory owned by its runtime user with private permissions. Mount persistent, writable storage here. |
 | `MARPPPT_PUBLIC_BASE_URL` | required | HTTPS origin only, with no credentials, path, query, or fragment. Artifact links use this public origin. |
-| `MARPPPT_MAX_REQUEST_BYTES` | default `2097152` | Integer from 1024 bytes through 2 MiB. This limit applies to JSON metadata and opaque refs, not attachment contents. |
+| `MARPPPT_MAX_REQUEST_BYTES` | default `2097152` | Integer from 1024 bytes through 4 MiB. This limit applies to JSON metadata and opaque refs, not attachment contents. The 4 MiB ceiling leaves room for the JSON envelope around a 2 MiB Markdown draft. |
 | `MARPPPT_MAX_ACTIVE_REQUESTS` | default `8` | Integer from 1 through 128. Excess requests receive HTTP 503. |
 | `MARPPPT_MAX_ACTIVE_JOBS` | default `2` | Integer from 1 through 32 and no greater than the request limit. Every `render_presentation` call in a JSON-RPC batch consumes a slot. |
 | `MARPPPT_SOFFICE` | default `soffice` | Optional absolute executable override. |

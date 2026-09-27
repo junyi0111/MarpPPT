@@ -117,6 +117,11 @@ export async function validatePackage(root = resolve(import.meta.dirname, ".."),
   await inside(root, "./dist/pptx/pptxgenjs-compat.js", "built PPTX compatibility helper", "file");
   await inside(root, "./dist/attachments/local-attachment-stage.js", "built attachment staging CLI", "file");
   await inside(root, "./dist/attachments/staged-resolver.js", "built staged attachment resolver", "file");
+  await inside(root, "./dist/source/source-contracts.js", "built source contracts", "file");
+  await inside(root, "./dist/source/source-material.js", "built source material preparation", "file");
+  await inside(root, "./dist/source/pdf-text.js", "built PDF text extractor", "file");
+  await inside(root, "./dist/mcp/tools/prepare-markdown-sources.js", "built source preparation MCP tool", "file");
+  await inside(root, "./dist/mcp/tools/save-markdown-draft.js", "built Markdown draft MCP tool", "file");
   await inside(root, "./scripts/write-hosted-manifest.ts", "hosted manifest generator", "file");
   await inside(root, "./scripts/preflight.mjs", "local preflight script", "file");
 }

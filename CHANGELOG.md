@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0] - 2026-09-27
+
+### Added
+
+- Add `prepare_markdown_sources` for bounded extraction from public HTTPS URLs and staged PDF attachments.
+- Add `save_markdown_draft` for publishing a model-generated, source-bound Markdown artifact with a SHA-256 digest.
+- Add one-question drafting preferences for complexity, style, summary depth, language, audience, and requested slide count.
+- Add PDF research staging with signed, expiring local references and a no-shell Poppler extraction boundary.
+- Document source trust boundaries, URL/PDF limits, partial-source failure handling, and the Codex invocation example.
+
+### Security
+
+- Reject credentialed or fragment-bearing authorized file URLs and keep the hosted JSON envelope large enough for a maximum-size Markdown draft without removing request limits.
+
 ## [0.2.2] - 2026-09-27
 
 ### Added

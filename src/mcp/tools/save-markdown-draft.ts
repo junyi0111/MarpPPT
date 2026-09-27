@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { MARP_MIME, type ArtifactRef, type ArtifactStore } from "../../artifacts/artifact-store.js";
-import { MarkdownDraftOptionsSchema } from "../../source/source-contracts.js";
+import { MarkdownDraftOptionsSchema, type MarkdownDraftOptions } from "../../source/source-contracts.js";
+import { getPreparedSourceContext } from "../../source/source-material.js";
 
 export const MAX_MARKDOWN_DRAFT_BYTES = 2 * 1024 * 1024;
 
@@ -10,7 +11,9 @@ const sourceIdSchema = z.string().regex(/^source-[0-9a-f-]{36}-[1-8]$/u);
 
 export const SaveMarkdownDraftInputSchema = z.object({
   sourceJobId: sourceJobIdSchema,
-  sourceIds: z.array(sourceIdSchema).min(1).max(32),
+  sourceIds: z.array(sourceIdSchema).min(1).max(32).superRefine((sourceIds, ctx) => {
+    if (new Set(sourceIds).size !== sourceIds.length) ctx.addIssue({ code: "custom", message: "Source IDs must be unique." });
+  }),
   title: z.string().trim().min(1).max(160),
   markdown: z.string().min(1),
   fileName: z.string().trim().min(1).max(120).optional(),
@@ -83,9 +86,19 @@ function validFileName(fileName: string | undefined): string {
   return selected;
 }
 
+function sameOptions(left: MarkdownDraftOptions, right: MarkdownDraftOptions): boolean {
+  return left.complexity === right.complexity
+    && left.style === right.style
+    && left.summary === right.summary
+    && left.language === right.language
+    && left.audience === right.audience
+    && left.requestedSlideCount === right.requestedSlideCount;
+}
+
 export async function saveMarkdownDraft(input: SaveMarkdownDraftInput, artifactStore: ArtifactStore): Promise<SaveMarkdownDraftOutput> {
   const jobId = randomUUID();
-  if (input.sourceIds.some((sourceId) => !sourceId.startsWith(`source-${input.sourceJobId}-`))) {
+  const preparedContext = getPreparedSourceContext(input.sourceJobId);
+  if (!preparedContext || input.sourceIds.some((sourceId) => !preparedContext.sourceIds.has(sourceId)) || !sameOptions(input.options, preparedContext.options)) {
     return failure(input, jobId, "SOURCE_CONTEXT_NOT_FOUND", "The source IDs do not belong to the selected preparation job.", "Prepare the sources again and use the returned source IDs.");
   }
   let fileName: string;

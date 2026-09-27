@@ -90,6 +90,19 @@ describe("source preparation and Markdown draft MCP tools", () => {
     const artifactUri = (draft.structuredContent as { markdown: { uri: string } }).markdown.uri;
     await expect(readFile(new URL(artifactUri), "utf8")).resolves.toContain("A measured source fact");
 
+    const mismatchedOptions = await client.callTool({
+      name: "save_markdown_draft",
+      arguments: {
+        sourceJobId: preparedValue.jobId,
+        sourceIds: [preparedValue.sources[0]!.id],
+        title: "Mismatched options",
+        markdown: "# Mismatch\n",
+        options: { ...preparedValue.options, style: "academic" },
+      },
+    });
+    expect(mismatchedOptions.isError).toBe(true);
+    expect(mismatchedOptions.structuredContent).toMatchObject({ failure: { code: "SOURCE_CONTEXT_NOT_FOUND" } });
+
     const crossJob = await client.callTool({
       name: "save_markdown_draft",
       arguments: {
@@ -102,6 +115,20 @@ describe("source preparation and Markdown draft MCP tools", () => {
     });
     expect(crossJob.isError).toBe(true);
     expect(crossJob.structuredContent).toMatchObject({ failure: { code: "SOURCE_CONTEXT_NOT_FOUND" } });
+
+    const forgedSourceId = `source-${preparedValue.jobId}-8`;
+    const forged = await client.callTool({
+      name: "save_markdown_draft",
+      arguments: {
+        sourceJobId: preparedValue.jobId,
+        sourceIds: [forgedSourceId],
+        title: "Forged source context",
+        markdown: "# Forged\n",
+        options: preparedValue.options,
+      },
+    });
+    expect(forged.isError).toBe(true);
+    expect(forged.structuredContent).toMatchObject({ failure: { code: "SOURCE_CONTEXT_NOT_FOUND" } });
     await client.close();
     await server.close();
     await artifactStore.close?.();

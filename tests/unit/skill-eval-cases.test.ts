@@ -61,6 +61,16 @@ describe("MarpPPT skill decision guidance", () => {
     expect(text).toMatch(/(?:結構化|structured).*argv.*(?:路徑|path)/is);
     expect(text).toMatch(/POSIX.*(?:單引號|single.quote).*(?:關閉|close).*(?:跳脫|escape).*(?:重新|reopen)/is);
   });
+
+  it("routes URL/PDF-only requests through source preparation and Markdown draft persistence", async () => {
+    const text = await guidance();
+    expect(text).toMatch(/(?:網址|URL).*PDF.*(?:Markdown|MD).*prepare_markdown_sources/is);
+    expect(text).toMatch(/save_markdown_draft/);
+    expect(text).toMatch(/(?:complexity|複雜度).*(?:brief|standard|detailed|選項)/is);
+    expect(text).toMatch(/(?:style|風格).*(?:academic|executive|tutorial|tech-editorial|選項)/is);
+    expect(text).toMatch(/(?:來源|source).*(?:不可信|untrusted).*(?:指令|instructions)/is);
+    expect(text).toMatch(/(?:--pdf|stage:research)/is);
+  });
 });
 
 describe("package consistency checks", () => {
@@ -77,6 +87,8 @@ describe("package consistency checks", () => {
         "package.json", "plugin.json", "mcp.json", ".codex-plugin/plugin.json", ".mcp.json",
         "skills/marp-ppt/SKILL.md", "skills/marp-ppt/agents/openai.yaml", "dist/mcp/stdio.js",
         "dist/mcp/http-render-worker-child.js",
+        "dist/source/source-contracts.js", "dist/source/source-material.js", "dist/source/pdf-text.js",
+        "dist/mcp/tools/prepare-markdown-sources.js", "dist/mcp/tools/save-markdown-draft.js",
         "dist/pptx/pptxgenjs-compat.js",
         "dist/attachments/local-attachment-stage.js", "dist/attachments/staged-resolver.js",
         "scripts/write-hosted-manifest.ts", "scripts/preflight.mjs", "scripts/update-codex-macos.sh",

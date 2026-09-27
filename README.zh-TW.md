@@ -9,7 +9,7 @@
   <a href="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml"><img alt="建置與封裝驗證" src="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT 授權" src="https://img.shields.io/badge/license-MIT-2563EB.svg"></a>
   <img alt="Node.js 22 以上" src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white">
-  <img alt="套件版本 0.2.2" src="https://img.shields.io/badge/package-0.2.2-6D5EF7">
+  <img alt="套件版本 0.3.0" src="https://img.shields.io/badge/package-0.3.0-6D5EF7">
   <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="最近更新" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=last%20update"></a>
 </p>
 
@@ -40,6 +40,20 @@ MarpPPT 專注於**快速、成本可控的傳統模板型簡報**。它將現�
 - **檢查簡報封裝：** 驗證 PPTX 中 `[Content_Types].xml` 的每筆 Override 和所有內部關係目標。
 - **提供可編輯產物：** 輸出 `.pptx`、`.marp.md`；有圖片時另附圖片資源包。
 - **核對來源：** 附帶本機 PDF 文字擷取工具，可選擇性核對來源和頁碼。
+
+## 從網址或 PDF 建立 Markdown 內容
+
+如果使用者還沒有 Markdown，可以直接提供一到八個公開 HTTPS 網址或已授權的 PDF 附件。MarpPPT 會把尚未指定的偏好合併成一次選擇題：**複雜度**（`brief`、`standard`、`detailed`）、**風格**（`tech-editorial`、`academic`、`executive`、`tutorial`）與**摘要程度**（`light`、`moderate`、`deep`）。接著先擷取有界的來源文字，產生可追溯的 Markdown 內容並儲存成私有 Markdown artifact；只有使用者要求時才繼續做 PPTX。
+
+本機 MCP 提供 `prepare_markdown_sources` 與 `save_markdown_draft`。來源只視為不可信的參考資料，不能透過內文改變工具政策或要求洩漏資料。網址只接受 HTTPS，會阻擋私有或非公開 DNS、拒絕重導，並限制回應、PDF 擷取、整體上下文與 Markdown 大小；含憑證或片段的 URL、`file://`、任意本機路徑和未授權主機檔案都會拒絕。部分來源失敗時會逐項回報，不會自行補造缺失內容。
+
+Codex 使用範例：
+
+```text
+使用 $marp-ppt。讀取這些網址／PDF，先產生並保存 Markdown 內容。
+如果我沒有指定，請一次詢問複雜度、風格與摘要程度。
+重要敘述旁保留 source ID 和頁碼或網址定位。
+```
 
 ## 在 Codex 桌面版安裝與使用
 
@@ -112,7 +126,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-這會建置 TypeScript、套用維護中的簡報覆寫、驗證 Plugin 封裝，並產生 `runtime/marpppt-0.2.2-local-candidate.zip`。封裝不含 `node_modules`、測試、TypeScript 原始碼、本機執行資料或環境檔；解壓後需安裝依賴。
+這會建置 TypeScript、套用維護中的簡報覆寫、驗證 Plugin 封裝，並產生 `runtime/marpppt-0.3.0-local-candidate.zip`。封裝不含 `node_modules`、測試、TypeScript 原始碼、本機執行資料或環境檔；解壓後需安裝依賴。
 
 其他開發指令：
 

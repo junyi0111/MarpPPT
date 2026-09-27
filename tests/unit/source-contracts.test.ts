@@ -54,6 +54,8 @@ describe("source-to-Markdown contracts", () => {
   it.each([
     { name: "empty source set", value: { sources: [], options: {} } },
     { name: "http URL", value: { sources: [{ kind: "url", url: "http://example.com" }], options: {} } },
+    { name: "insecure host file URL", value: { sources: [{ kind: "pdf", file: { kind: "host-file", fileId: "file-1", fileName: "paper.pdf", mimeType: "application/pdf", downloadUrl: "http://files.example.test/paper.pdf" } }], options: {} } },
+    { name: "credentialed host file URL", value: { sources: [{ kind: "pdf", file: { kind: "host-file", fileId: "file-1", fileName: "paper.pdf", mimeType: "application/pdf", downloadUrl: "https://user:secret@files.example.test/paper.pdf" } }], options: {} } },
     { name: "zero page", value: { sources: [{ kind: "pdf", file: { fileName: "paper.pdf", mimeType: "application/pdf", assetId: "stage:abc" }, pages: { page: 0 } }], options: {} } },
     { name: "too many sources", value: { sources: Array.from({ length: 9 }, () => ({ kind: "url", url: "https://example.com" })), options: {} } },
   ])("rejects $name", ({ value }) => {

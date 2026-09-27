@@ -46,6 +46,8 @@ it("creates a deterministic local candidate ZIP with only runtime and validation
     "package.json", "package-lock.json", "skills/marp-ppt/SKILL.md",
     "assets/themes/default.json", "dist/mcp/stdio.js", "dist/attachments/local-attachment-stage.js",
     "dist/mcp/http-render-worker-child.js", "dist/attachments/staged-resolver.js", "scripts/validate-package.ts",
+    "dist/source/source-contracts.js", "dist/source/source-material.js", "dist/source/pdf-text.js",
+    "dist/mcp/tools/prepare-markdown-sources.js", "dist/mcp/tools/save-markdown-draft.js",
     "scripts/write-hosted-manifest.ts",
     "scripts/preflight.mjs",
     "scripts/update-codex-macos.sh",

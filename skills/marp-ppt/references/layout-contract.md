@@ -7,7 +7,7 @@ This file is the shared layout reference for the `marp-ppt` Skill.
 - Use a fixed 13.333 × 7.5 inch 16:9 canvas.
 - Keep every object within the 0.45 inch left/right and 0.35 inch top/bottom safe margins.
 - Use the shared 12-column grid and theme tokens from `assets/themes/default.json`; do not invent per-slide colors, margins, or coordinates in the Skill.
-- Use `Noto Sans CJK TC` as the single font family for all English and Traditional Chinese text in the editable PPTX and preview. Do not use 新細明體 (PMingLiU) or a mixed font stack. Confirm the renderer resolves this font; if it is unavailable, report the font issue instead of silently substituting a potentially incompatible face. Body text stays at or above 18 pt; source and note text stays at or above 12 pt. Titles target two lines and never shrink below the title minimum.
+- Use one selected font family for all English and Traditional Chinese text in the editable PPTX and preview. The safe default is `Noto Sans CJK TC`; supported alternatives are `Noto Serif CJK TC`, `Source Han Serif TC`, and `IBM Plex Sans TC`. Do not use 新細明體 (PMingLiU) or a mixed font stack. Confirm the selected family resolves on the host; if it is unavailable, report the font issue instead of silently substituting a potentially incompatible face. Body text stays at or above 18 pt; source and note text stays at or above 12 pt. Titles target two lines and never shrink below the title minimum.
 - Render title, subtitle, each paragraph/list item, each diagram node label, chart/table, shape, connector, and image as separate layout objects. The PPTX renderer maps them to separate native PowerPoint objects.
 
 ## Text alignment

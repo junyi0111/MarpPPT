@@ -105,7 +105,7 @@ export async function runLocalPreflight(options: LocalPreflightOptions): Promise
   const matched = fontResult.stdout.split(/\r?\n/u).map((line) => line.trim()).find(Boolean) ?? null;
   const fontAvailable = fontResult.ok && Boolean(matched && matched.toLocaleLowerCase().includes(requestedFont.toLocaleLowerCase()));
   const font = { requested: requestedFont, matched, available: fontAvailable };
-  if (!fontAvailable) issues.push(issue("FONT_NOT_MATCHED", `沒有確認到要求的實際字型 family：${requestedFont}。`, "請安裝 Noto Sans CJK TC，或明確交付為字型未驗證的草稿。"));
+  if (!fontAvailable) issues.push(issue("FONT_NOT_MATCHED", `沒有確認到要求的實際字型 family：${requestedFont}。`, `請安裝 ${requestedFont}，或明確交付為字型未驗證的草稿。`));
 
   const status = issues.some((entry) => entry.severity === "error") ? "failed" : "passed";
   return { status, checkedAt, outputRoot, node, mcp, output, renderers, font, issues };

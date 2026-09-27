@@ -18,6 +18,6 @@
 
 ## 交付前檢查
 
-1. 執行本機 preflight，確認 Node、MCP 入口、LibreOffice／Poppler、輸出目錄及 `Noto Sans CJK TC` 實際 family。
+1. 執行本機 preflight，確認 Node、MCP 入口、LibreOffice／Poppler、輸出目錄及所選字體主題的實際 family；未指定時使用 `Noto Sans CJK TC`。
 2. 先做來源／頁數／圖片映射檢查，再渲染；任何編輯提要錯誤先修正，不消耗完整渲染重試。
 3. 產出後仍需完成 PPTX ZIP 關係檢查、預覽檢查與 PowerPoint 開啟／另存／關閉／重開驗收。編輯提要通過不等於視覺或 PowerPoint 驗收通過。

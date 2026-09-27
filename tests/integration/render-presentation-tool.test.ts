@@ -13,6 +13,7 @@ import { getCanvas } from "../../src/layout/geometry.js";
 import { findOverflow } from "../../src/layout/overflow.js";
 import { createLocalArtifactStore } from "../../src/artifacts/local-artifact-store.js";
 import { renderPresentation, type RenderFinalizedEvent } from "../../src/mcp/tools/render-presentation.js";
+import { createFontThemeCatalog } from "../../src/theme/font-presets.js";
 import { loadDefaultTheme } from "../helpers/layout-fixtures.js";
 
 const pptxMime = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
@@ -167,6 +168,30 @@ describe("render_presentation pipeline", () => {
     const bundle = unzipSync(bundleBytes);
     expect(Object.keys(bundle).sort()).toEqual(["assets/image-1.png", "assets/image-2.png", "kv-cache-compression.marp.md"].sort());
     expect(strFromU8(bundle["kv-cache-compression.marp.md"]!)).toContain("marp: true");
+  });
+
+  it("passes the selected font theme to both PPTX and Marp renderers", async () => {
+    const { input, deps } = await setup();
+    input.plan.themeId = "default-serif";
+    deps.themes = createFontThemeCatalog(deps.theme);
+    let pptxFont = "";
+    let marpFont = "";
+    const result = await renderPresentation(input, {
+      ...deps,
+      renderPptx: async (plan: PresentationPlan, assets: unknown[], theme: unknown) => {
+        pptxFont = (theme as { typography: { fontFace: string } }).typography.fontFace;
+        const { renderPptx } = await import("../../src/pptx/render-pptx.js");
+        return renderPptx(plan, assets as never[], theme as never);
+      },
+      serializeMarp: (plan: PresentationPlan, theme: unknown) => {
+        marpFont = (theme as { typography: { fontFace: string } }).typography.fontFace;
+        return serializeRealMarp(plan, theme as never);
+      },
+    });
+
+    expect(result.status).toBe("completed");
+    expect(pptxFont).toBe("Noto Serif CJK TC");
+    expect(marpFont).toBe("Noto Serif CJK TC");
   });
 
   it("reports a failed input result with no cleanup required", async () => {

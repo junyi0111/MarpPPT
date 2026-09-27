@@ -236,6 +236,7 @@ export interface RenderPresentationDependencies {
   attachmentResolver: AttachmentResolverDeps;
   artifactStore: ArtifactStore;
   theme: Theme;
+  themes?: ReadonlyMap<string, Theme>;
   preview?: typeof renderPreview;
   renderPptx?: typeof renderPptx;
   inspectPptx?: typeof inspectPptx;
@@ -432,9 +433,11 @@ async function renderPresentationCore(
   }
 
   const request = parsedInput.data as RenderPresentationInput & { sourceFile: AttachmentReference; imageFiles: AttachmentReference[] };
-  if (request.themeId && request.themeId !== dependencies.theme.id || request.plan.themeId !== dependencies.theme.id) {
+  const theme = dependencies.themes?.get(request.plan.themeId)
+    ?? (request.plan.themeId === dependencies.theme.id ? dependencies.theme : undefined);
+  if (!theme || (request.themeId && request.themeId !== theme.id)) {
     return failure(jobId, "PLAN_INVALID", "plan", "The selected theme is not the configured theme for this renderer.", {
-      userAction: "Select a supported theme and regenerate the structured plan.",
+      userAction: "Select one of the configured theme IDs and regenerate the structured plan.",
     });
   }
 
@@ -490,7 +493,7 @@ async function renderPresentationCore(
       });
     }
 
-    const overflow = layoutIssues(finalPlan, dependencies.theme);
+    const overflow = layoutIssues(finalPlan, theme);
     if (overflow.length) {
       const first = overflow[0]!;
       return failure(jobId, layoutFailure(first), "plan", first.message, {
@@ -514,7 +517,7 @@ async function renderPresentationCore(
     currentStage = "verify";
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        pptxBytes = await (dependencies.renderPptx ?? renderPptx)(finalPlan, imageAssets, dependencies.theme);
+        pptxBytes = await (dependencies.renderPptx ?? renderPptx)(finalPlan, imageAssets, theme);
         inspection = await (dependencies.inspectPptx ?? inspectPptx)(pptxBytes);
         if (inspection.slideCount !== finalPlan.slides.length || !inspection.relationshipsValid || !inspection.contentTypeOverridesValid || !inspection.slideBoundsValid) {
           throw new Error("PPTX structural inspection did not match the final presentation plan.");
@@ -550,7 +553,7 @@ async function renderPresentationCore(
     let marp: string;
     let bundle: Uint8Array | undefined;
     try {
-      marp = (dependencies.serializeMarp ?? serializeMarp)(finalPlan, dependencies.theme);
+      marp = (dependencies.serializeMarp ?? serializeMarp)(finalPlan, theme);
       if (attachments.images.length > 0) bundle = await createMarpBundle(marp, finalPlan, attachments.images, marpName);
     } catch {
       return failure(jobId, "PLAN_INVALID", "plan", "The final plan could not be serialized to a safe Marp document.", {
@@ -603,7 +606,7 @@ async function renderPresentationCore(
           preview: {
             status: isDraft ? "draft" as const : "ready" as const,
             pageCount: isDraft ? 0 : preview!.pageCount,
-            fontRequested: preview?.font.requested ?? dependencies.theme.typography.fontFace,
+            fontRequested: preview?.font.requested ?? theme.typography.fontFace,
             fontSelected: preview?.font.selected ?? null,
             fontSubstituted: preview?.font.substituted ?? false,
             issues: summarizePreviewIssues([...(preview?.warnings ?? []), ...(preview?.errors ?? [])]),

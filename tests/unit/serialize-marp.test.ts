@@ -136,6 +136,16 @@ describe("serializeMarp", () => {
     expect(source).toContain("62分");
   });
 
+  it("keeps the Marp theme portable and writes the selected font as CSS", () => {
+    const plan = makePresentationPlanFixture();
+    plan.themeId = "default-serif";
+    const theme = { ...defaultTheme, id: "default-serif", typography: { ...defaultTheme.typography, fontFace: "Noto Serif CJK TC" } };
+    const source = serializeMarp(plan, theme);
+    expect(source).toContain("theme: default");
+    expect(source).toContain('font-family: "Noto Serif CJK TC";');
+    expect(source).not.toContain("theme: default-serif");
+  });
+
   it("escapes table pipes without creating extra Markdown columns", () => {
     const plan = makePresentationPlanFixture();
     const tableSlide = plan.slides.find((slide) => slide.layout === "table");

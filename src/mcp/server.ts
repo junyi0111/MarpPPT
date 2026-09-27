@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AttachmentResolverDeps } from "../attachments/attachment-resolver.js";
 import type { Theme } from "../layout/geometry.js";
+import { createFontThemeCatalog } from "../theme/font-presets.js";
 import { createStagedAttachmentResolver } from "../attachments/staged-resolver.js";
 import { createLocalArtifactStore } from "../artifacts/local-artifact-store.js";
 import type { ArtifactStore } from "../artifacts/artifact-store.js";
@@ -77,11 +78,12 @@ export async function createFailClosedRenderDependencies(options: DefaultServerO
   const artifactStore = options.artifactStore ?? await createLocalArtifactStore({ outputRoot: options.outputRoot });
   const themeBytes = await readFile(fileURLToPath(new URL("../../assets/themes/default.json", import.meta.url)));
   const theme = JSON.parse(themeBytes.toString("utf8")) as Theme;
+  const themes = createFontThemeCatalog(theme);
   // Signed local staging refs are the only default read capability. Host-file
   // refs still require an explicitly injected host authorization adapter.
   const attachmentResolver = options.attachmentResolver ?? {
     probeResolver: createStagedAttachmentResolver(),
     ...(options.tempRoot ? { tempRoot: options.tempRoot } : {}),
   };
-  return { attachmentResolver, artifactStore, theme };
+  return { attachmentResolver, artifactStore, theme, themes };
 }

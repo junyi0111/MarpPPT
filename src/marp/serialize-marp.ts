@@ -173,8 +173,12 @@ export function serializeMarp(plan: PresentationPlan, theme: Theme): string {
     "---",
     "marp: true",
     "size: 16:9",
-    `theme: ${theme.id}`,
+    "theme: default",
     `title: ${JSON.stringify(parsed.title)}`,
+    "style: |",
+    "  section {",
+    `    font-family: ${JSON.stringify(theme.typography.fontFace)};`,
+    "  }",
     "---",
   ].join("\n");
   return `${frontMatter}\n${parsed.slides.map((slide, index) => `${index === 0 ? "" : "---\n"}${renderSlide(slide, parsed)}`).join("\n")}`;

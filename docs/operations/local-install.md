@@ -5,7 +5,7 @@ The supported Codex install path uses the repository as a local marketplace. Cod
 ## Prerequisites
 
 - Codex desktop on macOS, signed in, with access to GitHub and nodejs.org.
-- LibreOffice Impress, Poppler (`pdfinfo`, `pdftoppm`, `pdftotext`), fontconfig, and Noto CJK fonts for optional local preview and PDF-source checks.
+- LibreOffice Impress, Poppler (`pdfinfo`, `pdftoppm`, `pdftotext`), fontconfig, and the selected CJK font for optional local preview and PDF-source checks. See [font presets](fonts.md).
 - Microsoft PowerPoint and Codex `unified-computer-use` for the final save/reopen gate.
 - The installer locates the Codex executable inside the desktop app and downloads a private Node.js runtime. No separate CLI or Node.js setup is required for the plugin install.
 
@@ -62,9 +62,9 @@ Before a full render, run the local preflight against the intended absolute outp
 
 ```bash
 npm run build
-node scripts/preflight.mjs /absolute/path/to/marpppt-output
+node scripts/preflight.mjs /absolute/path/to/marpppt-output "Noto Sans CJK TC"
 ```
 
-The report separately records Node/MCP startup, output write access, LibreOffice/Poppler availability and the actual `Noto Sans CJK TC` family match. A failed preflight is an actionable setup failure, not a presentation draft.
+The report separately records Node/MCP startup, output write access, LibreOffice/Poppler availability and the actual selected font family match. A failed preflight is an actionable setup failure, not a presentation draft.
 
 See [privacy and retention](privacy-and-retention.md) for staging limits and artifact lifetimes.

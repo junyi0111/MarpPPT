@@ -6,6 +6,7 @@
 
 - Add the local stdio MCP `ensure_font` tool for checking and installing missing CJK font themes into the current user's font directory.
 - Add post-install font verification and Skill guidance that retries preflight before rendering.
+- Add `scripts/update-codex-macos.sh` so installed users can update the source and plugin cache without redownloading the managed Node.js runtime.
 - Keep remote HTTP MCP instances closed to host file installation; unsupported platforms receive a manual installation action.
 
 ## [0.2.1] - 2026-09-26

@@ -43,7 +43,7 @@ MarpPPT 專注於**快速、成本可控的傳統模板型簡報**。它將現�
 
 ## 在 Codex 桌面版安裝與使用
 
-以下安裝方式以 **macOS Codex 桌面版**為目標。只需已安裝並登入桌面 App、可連線到 GitHub 與 nodejs.org，以及可供安裝依賴的硬碟空間；**不必預先安裝 Git、Node.js、npm，或把 `codex` 加入終端機 PATH**。安裝程式會下載並驗證 Node.js、建置本機 Plugin，並使用桌面 App 內附的 Codex 執行檔安裝。安裝程式原始碼可先在 [scripts/install-codex-macos.sh](scripts/install-codex-macos.sh) 檢視。
+以下安裝方式以 **macOS Codex 桌面版**為目標。只需已安裝並登入桌面 App、可連線到 GitHub 與 nodejs.org，以及可供安裝依賴的硬碟空間；**不必預先安裝 Git、Node.js、npm，或把 `codex` 加入終端機 PATH**。安裝程式會下載並驗證 Node.js、建置本機 Plugin，並使用桌面 App 內附的 Codex 執行檔安裝。可先檢視 [scripts/install-codex-macos.sh](scripts/install-codex-macos.sh) 與 [scripts/update-codex-macos.sh](scripts/update-codex-macos.sh)。
 
 ### 方式一：請 Codex Agent 安裝
 
@@ -61,6 +61,17 @@ curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/inst
 ```
 
 看到 `Installed.` 後，**完整結束並重新開啟 Codex**，再開新對話，附上 `.md` 與需要使用的圖片，輸入 `$marp-ppt` 和簡報需求。安裝後可在桌面 App 的 Plugins 中確認 **MarpPPT** 已啟用。MCP 產物預設儲存在 `~/.marpppt/artifacts/`；如需更改位置，可在啟動 Codex 前設定絕對路徑環境變數 `PPTX_OUTPUT_ROOT`。可在安裝前設定絕對路徑的 `MARPPPT_INSTALL_ROOT`，將依賴與 Plugin 來源放在外接硬碟；**使用時必須保持硬碟連接**。
+
+### 更新已安裝的版本
+
+在同一台 Mac 關閉正在使用 MarpPPT 的對話後，貼入：
+
+```bash
+set -o pipefail
+curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/update-codex-macos.sh | /bin/bash
+```
+
+更新程式會沿用既有 Node.js，下載新來源、執行 `npm ci`、建置與封裝驗證，更新本機 marketplace 與 Plugin cache，並確認兩個 MCP 工具都存在。若原本安裝在外接硬碟，執行前要設定相同的 `MARPPPT_INSTALL_ROOT`。看到 `Updated MarpPPT.` 後，完整結束並重新開啟 Codex，再開新對話。更新不會刪除 `~/.marpppt/artifacts/` 中已產生的簡報檔。
 
 這個流程完成的是 **Plugin 與 MCP 安裝**；若要交付經 PowerPoint 重開驗證的正式簡報，仍需 Microsoft PowerPoint 與 Codex 的電腦操作能力。Windows 與 Linux 的桌面版一鍵安裝尚未驗證。
 

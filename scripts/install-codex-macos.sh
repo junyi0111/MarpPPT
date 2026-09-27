@@ -19,7 +19,7 @@ if [[ -z "$codex_bin" ]]; then
   codex_bin="$(command -v codex || true)"
 fi
 if [[ -z "$codex_bin" ]]; then
-  for candidate in /Applications/ChatGPT.app/Contents/Resources/codex "$HOME/Applications/ChatGPT.app/Contents/Resources/codex" /Applications/Codex.app/Contents/Resources/codex "$HOME/Applications/Codex.app/Contents/Resources/codex"; do
+  for candidate in /Applications/ChatGPT.app/Contents/Resources/codex /Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex "$HOME/Applications/ChatGPT.app/Contents/Resources/codex" "$HOME/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex" /Applications/Codex.app/Contents/Resources/codex "$HOME/Applications/Codex.app/Contents/Resources/codex"; do
     if [[ -x "$candidate" ]]; then
       codex_bin="$candidate"
       break
@@ -31,7 +31,7 @@ fi
 install_root="${MARPPPT_INSTALL_ROOT:-$HOME/.local/share/marpppt}"
 [[ "$install_root" == /* ]] || fail 'MARPPPT_INSTALL_ROOT must be an absolute path.'
 [[ "$install_root" != / ]] || fail 'MARPPPT_INSTALL_ROOT cannot be the filesystem root.'
-[[ ! -e "$install_root/source" && ! -e "$install_root/node" ]] || fail "Installation already exists at $install_root. Remove or update it deliberately before reinstalling."
+[[ ! -e "$install_root/source" && ! -e "$install_root/node" ]] || fail "Installation already exists at $install_root. Run scripts/update-codex-macos.sh to update it, or remove it deliberately before reinstalling."
 
 umask 077
 mkdir -p "$install_root"
@@ -108,3 +108,4 @@ NODE
 )
 
 printf '\nInstalled. Quit and reopen Codex, start a new conversation, and invoke $marp-ppt with a Markdown file.\n'
+printf 'For future updates, run scripts/update-codex-macos.sh with the same MARPPPT_INSTALL_ROOT.\n'

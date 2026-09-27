@@ -79,7 +79,7 @@ describe("package consistency checks", () => {
         "dist/mcp/http-render-worker-child.js",
         "dist/pptx/pptxgenjs-compat.js",
         "dist/attachments/local-attachment-stage.js", "dist/attachments/staged-resolver.js",
-        "scripts/write-hosted-manifest.ts", "scripts/preflight.mjs",
+        "scripts/write-hosted-manifest.ts", "scripts/preflight.mjs", "scripts/update-codex-macos.sh",
       ]) await clone(path);
       await expect(validatePackage(temporary)).resolves.toBeUndefined();
 

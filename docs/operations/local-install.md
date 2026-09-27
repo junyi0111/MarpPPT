@@ -22,6 +22,17 @@ The installer downloads the repository and an official Node.js 24 macOS archive,
 
 Quit and reopen Codex completely, then start a new conversation. Confirm MarpPPT is enabled in the Plugins view, attach a Markdown file and any images, and invoke `$marp-ppt`. The local MCP creates `~/.marpppt/artifacts/` with private permissions when it first starts. Set `PPTX_OUTPUT_ROOT` to another absolute path before launching Codex only when a different output location is needed.
 
+## Update an existing installation
+
+Do not run the first-install script over an existing installation; it intentionally stops when `$MARPPPT_INSTALL_ROOT/source` or `$MARPPPT_INSTALL_ROOT/node` already exists. Close active MarpPPT conversations and run the dedicated updater instead:
+
+```bash
+set -o pipefail
+curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/update-codex-macos.sh | /bin/bash
+```
+
+The updater reuses the managed Node.js runtime, downloads the latest source, runs `npm ci`, `npm run build`, and `npm run package:validate`, replaces the source directory with rollback protection, refreshes the local marketplace and plugin cache, and checks that `render_presentation` and `ensure_font` are exposed. It keeps generated artifacts under `~/.marpppt/artifacts/`. For an external drive, set the same absolute `MARPPPT_INSTALL_ROOT` used during installation. Quit and reopen Codex after `Updated MarpPPT.` appears.
+
 ## Manual developer install
 
 When Git, Node.js 22 or later, npm, and `codex` are already available on PATH, this command sequence remains useful for development:

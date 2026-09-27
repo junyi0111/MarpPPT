@@ -43,7 +43,7 @@ Its quality goals are **clear information, reliable layout, repeatable productio
 
 ## Install in Codex desktop
 
-The following path targets **Codex desktop on macOS**. You need the desktop app installed and signed in, access to GitHub and nodejs.org, and enough disk space for dependencies. **Git, Node.js, npm, and a `codex` command on your terminal PATH are not prerequisites.** The installer downloads and verifies Node.js, builds the local plugin, and uses the Codex executable bundled with the desktop app. You can [inspect the installer](scripts/install-codex-macos.sh) before running it.
+The following path targets **Codex desktop on macOS**. You need the desktop app installed and signed in, access to GitHub and nodejs.org, and enough disk space for dependencies. **Git, Node.js, npm, and a `codex` command on your terminal PATH are not prerequisites.** The installer downloads and verifies Node.js, builds the local plugin, and uses the Codex executable bundled with the desktop app. You can [inspect the installer](scripts/install-codex-macos.sh) and [updater](scripts/update-codex-macos.sh) before running them.
 
 ### Option 1: ask the Codex agent to install it
 
@@ -61,6 +61,17 @@ curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/inst
 ```
 
 After `Installed.` appears, **quit and reopen Codex completely**, start a new conversation, attach your `.md` file and images, and invoke `$marp-ppt` with your presentation request. Confirm **MarpPPT** is enabled in the desktop app's Plugins view. MCP outputs are stored under `~/.marpppt/artifacts/` by default. Set `PPTX_OUTPUT_ROOT` to an absolute path before launching Codex to change the output location. You can set an absolute `MARPPPT_INSTALL_ROOT` before installation to keep the runtime and plugin source on an external drive; **keep that drive connected while using the plugin**.
+
+### Update an existing installation
+
+Run this command on the same Mac after closing active MarpPPT conversations:
+
+```bash
+set -o pipefail
+curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/update-codex-macos.sh | /bin/bash
+```
+
+The updater reuses the managed Node.js runtime, downloads the new source, runs `npm ci`, builds and validates it, refreshes the local marketplace and plugin cache, then checks both MCP tools. If the installation uses an external drive, set the same `MARPPPT_INSTALL_ROOT` before running. After `Updated MarpPPT.` appears, quit and reopen Codex and start a new conversation. The updater does not remove your generated artifacts under `~/.marpppt/artifacts/`.
 
 This installs the **plugin and MCP**. A final PowerPoint save-and-reopen check also requires Microsoft PowerPoint and Codex computer-use support. One-step desktop installation on Windows and Linux has not been verified.
 

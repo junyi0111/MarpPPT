@@ -9,7 +9,7 @@ import { writeHostedManifest } from "./write-hosted-manifest.js";
 const FILES = [
   "plugin.json", "mcp.json", ".codex-plugin/plugin.json", ".mcp.json",
   "package.json", "package-lock.json", "README.md", "README.zh-TW.md", "LICENSE",
-  "scripts/validate-package.ts", "scripts/package-plugin.ts", "scripts/write-hosted-manifest.ts", "scripts/extract-pdf-reference.mjs", "scripts/preflight.mjs",
+  "scripts/validate-package.ts", "scripts/package-plugin.ts", "scripts/write-hosted-manifest.ts", "scripts/extract-pdf-reference.mjs", "scripts/preflight.mjs", "scripts/update-codex-macos.sh",
 ] as const;
 const DIRECTORIES = ["skills", "assets", "dist", "docs/operations"] as const;
 const ARCHIVE_MTIME = new Date(2000, 0, 1, 0, 0, 0);

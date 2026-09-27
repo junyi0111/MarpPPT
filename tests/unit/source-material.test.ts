@@ -25,7 +25,7 @@ describe("source material preparation", () => {
     const result = await prepareSourceMaterial(baseInput, deps());
     expect(result.status).toBe("ready");
     expect(result.options).toMatchObject({ complexity: "standard", style: "tech-editorial", summary: "moderate", language: "auto" });
-    expect(result.sources[0]).toMatchObject({ id: "source-1", title: "Example", content: expect.stringContaining("Visible text & facts.") });
+    expect(result.sources[0]).toMatchObject({ id: `source-${result.jobId}-1`, title: "Example", content: expect.stringContaining("Visible text & facts.") });
     expect(result.sources[0]!.content).not.toContain("alert");
     expect(result.sourceDigest).toMatch(/^[a-f0-9]{64}$/u);
   });
@@ -70,8 +70,8 @@ describe("source material preparation", () => {
     }));
     expect(result.status).toBe("partial");
     expect(result.sources).toHaveLength(1);
-    expect(result.sources[0]).toMatchObject({ id: "source-1", kind: "pdf", content: "Extracted PDF facts" });
-    expect(result.failures).toMatchObject([{ sourceId: "source-2", code: "SOURCE_UNSUPPORTED_TYPE" }]);
+    expect(result.sources[0]).toMatchObject({ id: `source-${result.jobId}-1`, kind: "pdf", content: "Extracted PDF facts" });
+    expect(result.failures).toMatchObject([{ sourceId: `source-${result.jobId}-2`, code: "SOURCE_UNSUPPORTED_TYPE" }]);
   });
 
   it("fails a source that would exceed the prepared context limit", async () => {

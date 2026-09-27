@@ -300,7 +300,7 @@ export async function prepareSourceMaterial(input: unknown, dependencies: Source
   let contextBytes = 0;
   for (let index = 0; index < parsed.sources.length; index++) {
     const source = parsed.sources[index]!;
-    const sourceId = `source-${index + 1}`;
+    const sourceId = `source-${jobId}-${index + 1}`;
     try {
       const prepared = source.kind === "url"
         ? await prepareUrlSource(source, sourceId, { resolveHostname, fetchSource, extractPdfText, timeoutMs, maxResponseBytes })

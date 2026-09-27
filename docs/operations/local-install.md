@@ -18,7 +18,7 @@ set -o pipefail
 curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/install-codex-macos.sh | /bin/bash
 ```
 
-The installer downloads the repository and an official Node.js 24 macOS archive, verifies Node.js against its published SHA-256 checksum, runs `npm ci`, builds and validates the plugin, and registers its local marketplace using either the `codex` command or the executable bundled inside the desktop app. It then connects to the MCP in Codex's installed plugin cache and checks that `render_presentation` is available. It sets both MCP manifests to the installed Node.js binary's absolute path so launching the desktop app does not depend on a terminal PATH. It stores source and Node.js under `~/.local/share/marpppt/` by default; set an absolute `MARPPPT_INSTALL_ROOT` before running to use another location, including an external drive. Keep that drive connected while using the plugin.
+The installer downloads the repository and an official Node.js 24 macOS archive, verifies Node.js against its published SHA-256 checksum, runs `npm ci`, builds and validates the plugin, and registers its local marketplace using either the `codex` command or the executable bundled inside the desktop app. It then connects to the MCP in Codex's installed plugin cache and checks that both `render_presentation` and the local-only `ensure_font` tool are available. It sets both MCP manifests to the installed Node.js binary's absolute path so launching the desktop app does not depend on a terminal PATH. It stores source and Node.js under `~/.local/share/marpppt/` by default; set an absolute `MARPPPT_INSTALL_ROOT` before running to use another location, including an external drive. Keep that drive connected while using the plugin.
 
 Quit and reopen Codex completely, then start a new conversation. Confirm MarpPPT is enabled in the Plugins view, attach a Markdown file and any images, and invoke `$marp-ppt`. The local MCP creates `~/.marpppt/artifacts/` with private permissions when it first starts. Set `PPTX_OUTPUT_ROOT` to another absolute path before launching Codex only when a different output location is needed.
 
@@ -65,6 +65,6 @@ npm run build
 node scripts/preflight.mjs /absolute/path/to/marpppt-output "Noto Sans CJK TC"
 ```
 
-The report separately records Node/MCP startup, output write access, LibreOffice/Poppler availability and the actual selected font family match. A failed preflight is an actionable setup failure, not a presentation draft.
+The report separately records Node/MCP startup, output write access, LibreOffice/Poppler availability and the actual selected font family match. If only `FONT_NOT_MATCHED` remains, the Skill calls the local MCP's `ensure_font` tool and reruns this preflight. A failed preflight is an actionable setup failure, not a presentation draft.
 
 See [privacy and retention](privacy-and-retention.md) for staging limits and artifact lifetimes.

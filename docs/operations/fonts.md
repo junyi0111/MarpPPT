@@ -20,7 +20,16 @@ MarpPPT 預設使用 `Noto Sans CJK TC`。它適合教材、技術摘要、表�
 
 ## 安裝與驗證
 
-MarpPPT 不把大型字體二進位檔放進每份簡報；PowerPoint 與 LibreOffice 必須在執行主機上找到所選 family。請從上述官方來源下載並安裝對應字體，完成後重新啟動 PowerPoint、LibreOffice 與 Codex。
+MarpPPT 不把大型字體二進位檔放進每份簡報；PowerPoint 與 LibreOffice 必須在執行主機上找到所選 family。
+
+使用本機 stdio MCP 時，Skill 會先執行 preflight。若只缺少字體，會呼叫 `ensure_font`，從上表的官方來源下載並寫入目前使用者的字體目錄，再重新驗證 family。這個流程：
+
+- 不使用 `sudo`，不覆寫系統字體；macOS 寫入 `~/Library/Fonts`，Linux 寫入 `$XDG_DATA_HOME/fonts/marpppt` 或 `~/.local/share/fonts/marpppt`。
+- 只有 `installIfMissing: true` 才會下載；來源網址固定為官方 GitHub／Google Fonts 網域，下載後會檢查字體檔格式與實際 family。
+- 安裝完成且 `verified: true` 後才會開始渲染；若無法確認，必須重啟 Codex／PowerPoint 後重新預檢。
+- 遠端 HTTP MCP 不提供檔案安裝工具；遠端環境請由管理者預裝字體或手動從官方來源安裝。
+
+若要手動安裝，請從上述官方來源下載對應字體，完成後重新啟動 PowerPoint、LibreOffice 與 Codex。
 
 在輸出目錄執行預檢：
 
@@ -29,7 +38,7 @@ npm run build
 node scripts/preflight.mjs /absolute/path/to/marpppt-output "Noto Serif CJK TC"
 ```
 
-`FONT_NOT_MATCHED` 代表主機未確認到指定 family。此時不要交付宣稱已驗證的預覽；先安裝字體或改回 `default`。
+`FONT_NOT_MATCHED` 代表主機未確認到指定 family。會先嘗試呼叫本機 `ensure_font`；若 MCP 不提供該工具、平台不支援或驗證失敗，不要交付宣稱已驗證的預覽，請依 `userAction` 手動安裝或改回 `default`。
 
 ## 使用規則
 

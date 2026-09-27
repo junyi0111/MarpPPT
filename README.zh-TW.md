@@ -35,7 +35,7 @@ MarpPPT 專注於**快速、成本可控的傳統模板型簡報**。它將現�
 
 - **整理內容脈絡：** 建立可追溯來源的簡報計畫，適度摘要，同時保留重要事實、數字、單位、名稱、術語與限定條件。
 - **一致的版面：** 內建 Tech Editorial 設計、雙語字體、可編輯表格規範與間距設定。
-- **可選字體主題：** 預設使用 Noto Sans TC，也提供 Noto Serif TC、Source Han Serif TC 與 IBM Plex Sans TC；使用前需在主機安裝並通過字型預檢，詳見 [字體主題說明](docs/operations/fonts.md)。
+- **可選字體主題：** 預設使用 Noto Sans TC，也提供 Noto Serif TC、Source Han Serif TC 與 IBM Plex Sans TC；本機 MCP 發現缺少字體時會從官方來源安裝到使用者字體目錄，再通過字型預檢，詳見 [字體主題說明](docs/operations/fonts.md)。
 - **保護圖片比例：** 圖片等比例縮放並使用 `contain`；文字方塊垂直置中。
 - **檢查簡報封裝：** 驗證 PPTX 中 `[Content_Types].xml` 的每筆 Override 和所有內部關係目標。
 - **提供可編輯產物：** 輸出 `.pptx`、`.marp.md`；有圖片時另附圖片資源包。

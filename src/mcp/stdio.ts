@@ -16,7 +16,7 @@ export async function startStdioServer(dependencies: PresentationServerDependenc
 }
 
 export async function runStdioFromEnvironment(): Promise<void> {
-  const dependencies = await createFailClosedRenderDependencies({ outputRoot: process.env.PPTX_OUTPUT_ROOT });
+  const dependencies = await createFailClosedRenderDependencies({ outputRoot: process.env.PPTX_OUTPUT_ROOT, enableFontInstallation: true });
   await startStdioServer(dependencies);
 }
 

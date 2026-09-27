@@ -98,6 +98,9 @@ try {
   if (!result.tools.some((tool) => tool.name === 'render_presentation')) {
     throw new Error('The installed MCP does not expose render_presentation.');
   }
+  if (!result.tools.some((tool) => tool.name === 'ensure_font')) {
+    throw new Error('The installed local MCP does not expose ensure_font.');
+  }
 } finally {
   await client.close();
 }

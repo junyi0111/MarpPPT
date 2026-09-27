@@ -8,6 +8,14 @@ export interface FontPreset {
   license: "OFL-1.1";
   sourceUrl: string;
   licenseUrl: string;
+  downloads: readonly FontDownload[];
+}
+
+export interface FontDownload {
+  url: string;
+  kind: "font" | "zip";
+  fileName?: string;
+  entryPattern?: string;
 }
 
 const PRESETS = [
@@ -19,6 +27,11 @@ const PRESETS = [
     license: "OFL-1.1",
     sourceUrl: "https://fonts.google.com/specimen/Noto+Sans+TC",
     licenseUrl: "https://github.com/google/fonts/blob/main/ofl/notosanstc/OFL.txt",
+    downloads: [{
+      url: "https://raw.githubusercontent.com/google/fonts/523d033d6cb47f4a80c58a35753646f5c3608a78/ofl/notosanstc/NotoSansTC%5Bwght%5D.ttf",
+      kind: "font",
+      fileName: "NotoSansTC-variable.ttf",
+    }],
   },
   {
     id: "default-serif",
@@ -28,6 +41,11 @@ const PRESETS = [
     license: "OFL-1.1",
     sourceUrl: "https://fonts.google.com/specimen/Noto+Serif+TC",
     licenseUrl: "https://github.com/google/fonts/blob/main/ofl/notoseriftc/OFL.txt",
+    downloads: [{
+      url: "https://raw.githubusercontent.com/google/fonts/main/ofl/notoseriftc/NotoSerifTC%5Bwght%5D.ttf",
+      kind: "font",
+      fileName: "NotoSerifTC-variable.ttf",
+    }],
   },
   {
     id: "default-source-serif",
@@ -37,6 +55,11 @@ const PRESETS = [
     license: "OFL-1.1",
     sourceUrl: "https://github.com/adobe-fonts/source-han-serif",
     licenseUrl: "https://github.com/adobe-fonts/source-han-serif/blob/master/LICENSE.txt",
+    downloads: [{
+      url: "https://github.com/adobe-fonts/source-han-serif/releases/latest/download/10_SourceHanSerifTC.zip",
+      kind: "zip",
+      entryPattern: "SourceHanSerifTC-.*\\.(?:otf|ttf)$",
+    }],
   },
   {
     id: "default-plex",
@@ -46,6 +69,18 @@ const PRESETS = [
     license: "OFL-1.1",
     sourceUrl: "https://github.com/IBM/plex/tree/master/packages/plex-sans-tc",
     licenseUrl: "https://github.com/IBM/plex/blob/master/LICENSE.txt",
+    downloads: [
+      {
+        url: "https://raw.githubusercontent.com/IBM/plex/master/packages/plex-sans-tc/fonts/complete/otf/hinted/IBMPlexSansTC-Regular.otf",
+        kind: "font",
+        fileName: "IBMPlexSansTC-Regular.otf",
+      },
+      {
+        url: "https://raw.githubusercontent.com/IBM/plex/master/packages/plex-sans-tc/fonts/complete/otf/hinted/IBMPlexSansTC-Bold.otf",
+        kind: "font",
+        fileName: "IBMPlexSansTC-Bold.otf",
+      },
+    ],
   },
 ] as const satisfies readonly FontPreset[];
 

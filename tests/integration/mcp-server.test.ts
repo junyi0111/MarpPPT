@@ -88,6 +88,42 @@ describe("production MCP entry points", () => {
     await server.close();
   });
 
+  it("exposes ensure_font only when a local font installer is explicitly provided", async () => {
+    const artifactStore = await createStore();
+    const server = createMcpServer({
+      attachmentResolver: failClosedResolver(),
+      artifactStore,
+      theme: { id: "default" } as never,
+      fontInstaller: {
+        ensure: async (request) => ({
+          status: "installed" as const,
+          themeId: request.themeId,
+          family: "Noto Sans CJK TC",
+          platform: "darwin" as const,
+          installDirectory: "/Users/tester/Library/Fonts",
+          files: ["NotoSansTC-variable.ttf"],
+          matched: "Noto Sans CJK TC",
+          verified: true,
+          message: "installed",
+          userAction: "rerun preflight",
+        }),
+      },
+    });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "font-installer-test", version: "1.0.0" });
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+    const tools = await client.listTools();
+    expect(tools.tools.map((tool) => tool.name)).toEqual(["render_presentation", "ensure_font"]);
+    expect(tools.tools.find((tool) => tool.name === "ensure_font")?.annotations).toMatchObject({ openWorldHint: true, destructiveHint: true });
+
+    const result = await client.callTool({ name: "ensure_font", arguments: { themeId: "default", installIfMissing: true } });
+    expect(result.isError).not.toBe(true);
+    expect(result.structuredContent).toMatchObject({ status: "installed", themeId: "default", verified: true });
+    await client.close();
+    await server.close();
+  });
+
   it("uses an injected hosted render executor while preserving the public tool result shape", async () => {
     const artifactStore = await createStore();
     const executeRender = vi.fn(async () => ({

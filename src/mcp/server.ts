@@ -2,16 +2,20 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import type { AttachmentResolverDeps } from "../attachments/attachment-resolver.js";
 import type { Theme } from "../layout/geometry.js";
 import { createFontThemeCatalog } from "../theme/font-presets.js";
+import { createFontInstaller, type FontInstaller, type FontInstallReport } from "../theme/font-installer.js";
 import { createStagedAttachmentResolver } from "../attachments/staged-resolver.js";
 import { createLocalArtifactStore } from "../artifacts/local-artifact-store.js";
 import type { ArtifactStore } from "../artifacts/artifact-store.js";
 import { withRenderJobAdmission } from "./http-admission.js";
 import { renderPresentation, RenderPresentationInputSchema, RenderPresentationOutputSchema, type RenderPresentationDependencies } from "./tools/render-presentation.js";
 
-export type PresentationServerDependencies = RenderPresentationDependencies;
+export type PresentationServerDependencies = RenderPresentationDependencies & {
+  fontInstaller?: FontInstaller;
+};
 
 export interface McpServerDependencies extends PresentationServerDependencies {
   acquireRenderJob?: () => (() => void) | undefined;
@@ -64,6 +68,58 @@ export function createMcpServer(dependencies: McpServerDependencies): McpServer 
       };
     },
   ));
+  if (dependencies.fontInstaller) {
+    const ensureFontInputSchema = z.object({
+      themeId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/u),
+      installIfMissing: z.boolean().default(false),
+    }).strict();
+    const ensureFontOutputSchema = z.object({
+      status: z.enum(["available", "installed", "missing", "unsupported", "failed"]),
+      themeId: z.string(),
+      family: z.string(),
+      platform: z.string(),
+      installDirectory: z.string().nullable(),
+      files: z.array(z.string()),
+      matched: z.string().nullable(),
+      verified: z.boolean(),
+      message: z.string(),
+      userAction: z.string().optional(),
+      error: z.string().optional(),
+    }).strict();
+    server.registerTool("ensure_font", {
+      title: "Check and install a local presentation font",
+      description: "Check whether the selected MarpPPT font family is available. In local stdio mode, install it into the current user's font directory from the official source URL when installIfMissing is true, then verify the family.",
+      inputSchema: ensureFontInputSchema,
+      outputSchema: ensureFontOutputSchema,
+      annotations: { openWorldHint: true, destructiveHint: true },
+    }, async (input) => {
+      let output: FontInstallReport | (Omit<FontInstallReport, "status"> & { status: "failed"; error: string });
+      try {
+        output = await dependencies.fontInstaller!.ensure(input);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Font installation failed.";
+        output = {
+          status: "failed",
+          themeId: input.themeId,
+          family: "unknown",
+          platform: process.platform,
+          installDirectory: null,
+          files: [],
+          matched: null,
+          verified: false,
+          message,
+          error: message,
+          userAction: "確認網路、官方字體來源與本機字體目錄權限後重試。",
+        };
+      }
+      const failed = output.status === "failed" || output.status === "missing" || output.status === "unsupported" || !output.verified;
+      return {
+        content: [{ type: "text" as const, text: output.message }],
+        structuredContent: output as Record<string, unknown>,
+        ...(failed ? { isError: true } : {}),
+      };
+    });
+  }
   return server;
 }
 
@@ -72,6 +128,7 @@ export interface DefaultServerOptions {
   tempRoot?: string;
   artifactStore?: ArtifactStore;
   attachmentResolver?: AttachmentResolverDeps;
+  enableFontInstallation?: boolean;
 }
 
 export async function createFailClosedRenderDependencies(options: DefaultServerOptions = {}): Promise<PresentationServerDependencies> {
@@ -85,5 +142,11 @@ export async function createFailClosedRenderDependencies(options: DefaultServerO
     probeResolver: createStagedAttachmentResolver(),
     ...(options.tempRoot ? { tempRoot: options.tempRoot } : {}),
   };
-  return { attachmentResolver, artifactStore, theme, themes };
+  return {
+    attachmentResolver,
+    artifactStore,
+    theme,
+    themes,
+    ...(options.enableFontInstallation ? { fontInstaller: createFontInstaller() } : {}),
+  };
 }

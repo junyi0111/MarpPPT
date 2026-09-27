@@ -35,7 +35,7 @@ Its quality goals are **clear information, reliable layout, repeatable productio
 
 - **A clear story:** creates a sourced slide plan and applies moderate, content-aware summarization while preserving key facts, numbers, units, names, and qualifications.
 - **Consistent layout:** includes the Tech Editorial design system, bilingual font settings, editable table rules, and spacing guidance.
-- **Selectable font themes:** defaults to Noto Sans TC and also supports Noto Serif TC, Source Han Serif TC, and IBM Plex Sans TC. Install the chosen family on the host and pass the font preflight before rendering; see [font themes](docs/operations/fonts.md).
+- **Selectable font themes:** defaults to Noto Sans TC and also supports Noto Serif TC, Source Han Serif TC, and IBM Plex Sans TC. The local MCP can install a missing family from an official source into the user's font directory, then rerun preflight; see [font themes](docs/operations/fonts.md).
 - **Images handled carefully:** keeps each image's aspect ratio and uses `contain` fit; text boxes are vertically centered.
 - **A checked package:** validates every `[Content_Types].xml` Override and internal relationship target in the PPTX archive.
 - **Useful deliverables:** returns editable `.pptx` and `.marp.md` files, plus an image bundle when needed.

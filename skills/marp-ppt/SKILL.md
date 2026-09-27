@@ -24,13 +24,14 @@ Codex 的明確呼叫是 `$marp-ppt`。一般「把 Markdown 做成 PPTX／Power
    - 若來源明確寫出同一指標由 A 變為 B（例如「從 32 分提升到 62 分」），使用數值對比版型：沿用主題同一字型與單位，A 使用基準內文字級，B 使用 A 的 1.5 倍字級，搭配清楚的方向箭頭與簡短語意標籤。只對可完整解析的短句套用；長句、條件句與無法確認單位的內容保留一般文字，不能為了放大而刪除限定條件。
 5. `sourceFile.assetId` 與 `imageFiles[].assetId` 是 staging 回傳的 `stage:` 開頭不透明引用，只供附件解析器讀取。另為每張圖分配穩定、安全的簡報 ID，例如 `image-1`，按 `imageFiles` 順序放入頂層 `imageAssetIds`，並與 `plan.imageAssetIds`、`plan.assetManifest[].assetId` 及各頁 `imageIds` 對應。簡報 ID 只用英數、`_`、`-`，由英數開頭，最長 120 字元。不能把 staging CLI 輸出的探針用 `imageAssetIds` 原樣傳給正式工具。
 6. 在正式渲染前執行 `node scripts/preflight.mjs <絕對輸出目錄> [字體 family]` 或等效的 `runLocalPreflight`。缺 Node 版本、MCP 入口、LibreOffice／Poppler、輸出寫入權限或所選字體 family 時，先回報具體缺項，不開始完整製作。預設主題使用 `Noto Sans CJK TC`；其他主題的字體與安裝來源見 `docs/operations/fonts.md`。
+   - 若 preflight 只有 `FONT_NOT_MATCHED`，且目前是本機 stdio MCP，呼叫 `ensure_font`，傳入 `{ themeId: plan.themeId, installIfMissing: true }`。只接受工具回報 `status: "available"` 或 `status: "installed"` 且 `verified: true`，再重新執行 preflight；安裝寫入使用者自己的字體目錄，不使用 sudo、不修改系統字體。若工具不存在、回報 `unsupported`、`failed` 或 `verified: false`，停止正式渲染並明確提供 `userAction`。遠端 HTTP MCP 不提供此安裝工具，必須交由使用者手動安裝。
 7. 同一次全稿規劃建立可選的 `editorialBrief`，把觀眾、目的、頁數、每頁主訊息、證據行範圍、必留事實、圖片映射與版型語意放在一起。細節規範見 [editorial-workflow.md](references/editorial-workflow.md)。若 brief 存在，正式 MCP 會先檢查 sourceDigest、行範圍、slideId／factId／assetId、頁數與必留畫面事實；檢查不通過就停止，不把錯誤留到 PPTX 才發現。
 
 ## 渲染與交付
 
 生成與編輯 PPTX 的唯一工具是本 Plugin 的 `render_presentation`；設計標準、PDF 擷取器、圖片檢查、ZIP 封裝驗證與交付檢查表都隨 MarpPPT 套件提供，不要求使用者另外啟用 Presentations 或 PDF Plugin。若可用，可把其他簡報文件的設計建議當作參考；不得呼叫其他套件生成或編輯本次 PPTX。
 
-只呼叫正式 MCP 工具 `render_presentation`，送入 `{ plan, sourceFile, imageFiles, imageAssetIds, themeId?, editorialBrief? }`。工具不可用時，明確告知「MarpPPT 的 presentation MCP 依賴目前不可用；請安裝／啟用本 Plugin 的本機 MCP 後再試」，不要宣稱已完成簡報或偷偷改用其他輸出流程。
+字體缺失時只先呼叫本機 MCP 的 `ensure_font`，完成驗證後才呼叫正式 MCP 工具 `render_presentation`。`render_presentation` 送入 `{ plan, sourceFile, imageFiles, imageAssetIds, themeId?, editorialBrief? }`。工具不可用時，明確告知「MarpPPT 的 presentation MCP 依賴目前不可用；請安裝／啟用本 Plugin 的本機 MCP 後再試」，不要宣稱已完成簡報或偷偷改用其他輸出流程。
 
 讀取 `status`、`failure.code`、`failure.stage`、`failure.affectedFileOrSlide`、`failure.userAction`、`failure.retryable` 以及 `validation.issues`：
 

@@ -42,7 +42,7 @@ describe("source material preparation", () => {
     expect(result.sourceDigest).toMatch(/^[a-f0-9]{64}$/u);
   });
 
-  it.each(["127.0.0.1", "192.0.0.1", "2001:2::1"])("rejects non-public DNS result %s before making a request", async (address) => {
+  it.each(["127.0.0.1", "192.0.0.1", "2001:2::1", "2001:5::1", "3fff::1"])("rejects non-public DNS result %s before making a request", async (address) => {
     const fetchSource = vi.fn();
     const result = await prepareSourceMaterial(baseInput, deps({
       resolveHostname: async () => [address],
@@ -87,6 +87,24 @@ describe("source material preparation", () => {
       fetchSource: async () => ({ status: 200, finalUrl: "https://example.com/other", headers: { "content-type": "text/plain" }, body: Buffer.from("unexpected") }),
     }));
     expect(sameOriginPathChange.failures[0]).toMatchObject({ code: "REDIRECT_BLOCKED" });
+  });
+
+  it("reports empty text from a URL PDF without invalidating other sources", async () => {
+    const result = await prepareSourceMaterial({
+      sources: [
+        { kind: "url", url: "https://example.com/empty.pdf" },
+        { kind: "url", url: "https://example.com/article" },
+      ],
+      options: {},
+    }, deps({
+      fetchSource: async (url) => url.pathname.endsWith(".pdf")
+        ? { status: 200, finalUrl: url.href, headers: { "content-type": "application/pdf" }, body: Buffer.from("%PDF-1.7\nbytes") }
+        : { status: 200, finalUrl: url.href, headers: { "content-type": "text/plain" }, body: Buffer.from("A usable fact.") },
+      extractPdfText: async () => "  \n",
+    }));
+    expect(result.status).toBe("partial");
+    expect(result.sources).toHaveLength(1);
+    expect(result.failures).toMatchObject([{ sourceId: `source-${result.jobId}-1`, code: "SOURCE_EMPTY" }]);
   });
 
   it("dispatches PDF attachments and returns partial results when one source fails", async () => {

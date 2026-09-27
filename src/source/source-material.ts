@@ -143,9 +143,9 @@ function isPrivateIPv6(address: string): boolean {
   const specialRanges: Array<[string, number]> = [
     ["::", 128], ["::1", 128], ["::ffff:0:0", 96],
     ["fc00::", 7], ["fe80::", 10], ["ff00::", 8],
-    ["2001:0::", 32], ["2001:1::", 48], ["2001:2::", 48],
+    ["2001:0::", 32], ["2001::", 23], ["2001:1::", 48], ["2001:2::", 48],
     ["2001:3::", 32], ["2001:4:112::", 48], ["2001:10::", 28],
-    ["2001:20::", 28], ["2001:db8::", 32], ["2002::", 16], ["3ffe::", 16],
+    ["2001:20::", 28], ["2001:db8::", 32], ["2002::", 16], ["3ffe::", 16], ["3fff::", 20],
   ];
   return specialRanges.some(([base, prefix]) => inIPv6Range(value, base, prefix));
 }
@@ -336,7 +336,9 @@ async function prepareUrlSource(
     if (response.body.byteLength > deps.maxResponseBytes) throw new SourceMaterialError("SOURCE_LIMIT_EXCEEDED", "fetch", "The source response exceeds the 8 MiB limit.", false);
     const type = contentType(response);
     if (isPdf(response.body, type)) {
-      return { id: sourceId, kind: "url", title: boundedTitle(source.label ?? "PDF source", "PDF source"), locator: safeUrlDisplay(url), content: await deps.extractPdfText(response.body, undefined), characterCount: 0 };
+      const content = (await deps.extractPdfText(response.body, undefined)).trim();
+      if (!content) throw new SourceMaterialError("SOURCE_EMPTY", "extract", "The PDF did not contain readable text.", false);
+      return { id: sourceId, kind: "url", title: boundedTitle(source.label ?? "PDF source", "PDF source"), locator: safeUrlDisplay(url), content, characterCount: content.length };
     }
     if (type === "text/html" || type === undefined) {
       const parsed = htmlText(decodeText(response.body));

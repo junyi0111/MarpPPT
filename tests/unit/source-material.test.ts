@@ -30,10 +30,10 @@ describe("source material preparation", () => {
     expect(result.sourceDigest).toMatch(/^[a-f0-9]{64}$/u);
   });
 
-  it("rejects private DNS results before making a request", async () => {
+  it.each(["127.0.0.1", "192.0.0.1"])("rejects non-public DNS result %s before making a request", async (address) => {
     const fetchSource = vi.fn();
     const result = await prepareSourceMaterial(baseInput, deps({
-      resolveHostname: async () => ["127.0.0.1"],
+      resolveHostname: async () => [address],
       fetchSource,
     }));
     expect(result.status).toBe("failed");

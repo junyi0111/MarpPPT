@@ -16,6 +16,34 @@ afterEach(async () => {
 });
 
 describe("native layout object mapping", () => {
+  it("centers diagram labels while keeping ordinary body text left aligned", () => {
+    const calls: Array<{ text: string; options: Record<string, unknown> }> = [];
+    const context: LayoutObjectContext = {
+      pptx: { ShapeType: { rect: "rect", roundRect: "roundRect", ellipse: "ellipse", diamond: "diamond", line: "line" }, ChartType: { bar: "bar", line: "line", pie: "pie" } },
+      slide: {
+        addText: (text, options) => { calls.push({ text, options }); },
+        addShape: () => undefined,
+        addImage: () => undefined,
+        addTable: () => undefined,
+        addChart: () => undefined,
+      },
+      assets: new Map(),
+      theme,
+    };
+    addLayoutObject({
+      kind: "text", id: "node-label", slideId: "s1", x: 1, y: 1, w: 3, h: 1,
+      role: "diagram-node", text: "節點", fontFace: theme.typography.fontFace, fontSize: 20,
+      minFontSize: 18, lineHeight: 1.2, color: "#172554",
+    }, context);
+    addLayoutObject({
+      kind: "text", id: "body-label", slideId: "s1", x: 1, y: 2, w: 3, h: 1,
+      role: "body", text: "內文", fontFace: theme.typography.fontFace, fontSize: 20,
+      minFontSize: 18, lineHeight: 1.2, color: "#172554",
+    }, context);
+    expect(calls[0]!.options.align).toBe("center");
+    expect(calls[1]!.options.align).toBe("left");
+  });
+
   it.each([
     ["horizontal", [1, 1, 4, 1], false, false],
     ["positive slope", [1, 1, 4, 3], false, false],

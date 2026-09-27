@@ -130,7 +130,11 @@ function titleObject(slide: SlidePlan, theme: Theme): TextLayoutObject {
 function sourceObject(slide: SlidePlan, theme: Theme): TextLayoutObject | undefined {
   if (!slide.sourceRefs?.length) return undefined;
   const prefix = theme.footer.sourcePrefix || "來源：";
-  return textObject(slide, theme, `${slide.id}:source`, "source", `${prefix}${slide.sourceRefs.join("；")}`, getTextBox("footer", slide.layout, theme), {
+  const references = slide.sourceRefs
+    .map((reference) => reference.replace(/^\s*#{1,6}\s*/u, "").replace(/\s+/gu, " ").trim())
+    .filter(Boolean);
+  if (references.length === 0) return undefined;
+  return textObject(slide, theme, `${slide.id}:source`, "source", `${prefix}${references.join("；")}`, getTextBox("footer", slide.layout, theme), {
     maxLines: 2,
   });
 }
@@ -217,12 +221,19 @@ function comparisonObjects(slide: Extract<SlidePlan, { layout: "comparison" }>, 
 
 function diagramObjects(slide: Extract<SlidePlan, { layout: "diagram" }>, theme: Theme, diagram: DiagramData): LayoutObject[] {
   const area = getTextBox("content", slide.layout, theme);
-  const rows = Math.ceil(Math.sqrt(diagram.nodes.length / 1.7));
+  // Short flows need to read left-to-right. The old square-root grid placed a
+  // two-node flow in one narrow vertical column, leaving most of the slide
+  // empty and making its connector look like a stray line.
+  const rows = diagram.nodes.length <= 3 ? 1 : Math.ceil(Math.sqrt(diagram.nodes.length / 1.7));
   const columns = Math.ceil(diagram.nodes.length / rows);
-  const gapX = 0.3;
-  const gapY = 0.38;
-  const nodeW = Math.min(2.55, (area.w - gapX * (columns - 1)) / columns);
-  const nodeH = Math.min(0.86, (area.h - gapY * (rows - 1)) / rows);
+  const gapX = rows === 1
+    ? (diagram.nodes.length === 2 ? 1.65 : 0.8)
+    : columns <= 2 ? 0.9 : 0.55;
+  const gapY = rows === 1 ? 0 : rows <= 2 ? 0.55 : 0.45;
+  const maxNodeW = rows === 1 ? (diagram.nodes.length === 2 ? 5.2 : 4.4) : columns <= 2 ? 4.6 : 3.2;
+  const nodeW = Math.min(maxNodeW, (area.w - gapX * (columns - 1)) / columns);
+  const maxNodeH = rows === 1 ? 1.15 : rows <= 2 ? 1.0 : 0.86;
+  const nodeH = Math.min(maxNodeH, (area.h - gapY * (rows - 1)) / rows);
   const gridW = columns * nodeW + (columns - 1) * gapX;
   const gridH = rows * nodeH + (rows - 1) * gapY;
   const left = area.x + (area.w - gridW) / 2;
@@ -263,7 +274,7 @@ function diagramObjects(slide: Extract<SlidePlan, { layout: "diagram" }>, theme:
         from: edge.from,
         to: edge.to,
         stroke: theme.colors.accent,
-        strokeWidth: 1.4,
+        strokeWidth: 1.8,
         endArrow: true,
       };
     }
@@ -295,7 +306,7 @@ function diagramObjects(slide: Extract<SlidePlan, { layout: "diagram" }>, theme:
       from: edge.from,
       to: edge.to,
       stroke: theme.colors.accent,
-      strokeWidth: 1.4,
+      strokeWidth: 1.8,
       endArrow: true,
     };
   });

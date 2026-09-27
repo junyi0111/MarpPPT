@@ -48,6 +48,19 @@ describe("controlled slide layouts", () => {
     expect(buildSlideLayout(tableSlide!, defaultTheme).some((object) => object.kind === "table")).toBe(true);
   });
 
+  it("renders source references as readable footer labels", () => {
+    const slide: Extract<SlidePlan, { layout: "bullets" }> = {
+      id: "source-label", title: "來源標籤", layout: "bullets",
+      blocks: [{ id: "fact", text: "內容" }], imageIds: [], sourceRefs: ["## 問題不是程式能跑"],
+    };
+    const source = buildSlideLayout(slide, defaultTheme).find((object) => object.kind === "text" && object.role === "source");
+    expect(source?.kind).toBe("text");
+    if (source?.kind === "text") {
+      expect(source.text).toBe("來源：問題不是程式能跑");
+      expect(source.text).not.toContain("#");
+    }
+  });
+
   it("reserves caption space so chart and table data boxes do not overlap captions", () => {
     const chartSlide: Extract<SlidePlan, { layout: "chart" }> = {
       id: "chart-caption",
@@ -242,6 +255,30 @@ describe("controlled slide layouts", () => {
       expect(line.y + line.h).toBeLessThanOrEqual(7.15);
     }
     expect(findOverflow(objects, getCanvas(defaultTheme)).filter((issue) => issue.code === "LAYOUT_OVERFLOW")).toEqual([]);
+  });
+
+  it("uses the slide width for a simple two-node flow instead of a narrow vertical stack", () => {
+    const diagram: Extract<SlidePlan, { layout: "diagram" }> = {
+      id: "simple-flow", title: "簡單流程", layout: "diagram",
+      diagram: {
+        nodes: [{ id: "input", label: "輸入" }, { id: "output", label: "輸出" }],
+        edges: [{ from: "input", to: "output" }],
+      },
+      imageIds: [], sourceRefs: [],
+    };
+    const objects = buildSlideLayout(diagram, defaultTheme);
+    const nodes = objects.filter((object) => object.kind === "shape" && object.id.includes(":node:"));
+    const line = objects.find((object) => object.kind === "line");
+    expect(nodes).toHaveLength(2);
+    expect(nodes[0]!.w).toBeGreaterThan(3.5);
+    expect(nodes[0]!.y).toBeCloseTo(nodes[1]!.y, 2);
+    expect(nodes[0]!.x).toBeLessThan(nodes[1]!.x);
+    expect(line?.kind).toBe("line");
+    if (line?.kind === "line") {
+      expect(line.x2 - line.x1).toBeGreaterThan(1.5);
+      expect(line.y2).toBeCloseTo(line.y1, 2);
+      expect(line.endArrow).toBe(true);
+    }
   });
 
   it("keeps parallel edge labels near their mapped connectors or reports when placement cannot stay local", () => {

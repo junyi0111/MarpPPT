@@ -1,6 +1,6 @@
 import { isAbsolute, resolve } from "node:path";
 
-const DEFAULT_REQUEST_BYTES = 2 * 1024 * 1024;
+const DEFAULT_REQUEST_BYTES = 4 * 1024 * 1024;
 const MAX_REQUEST_BYTES = 4 * 1024 * 1024;
 const MAX_ACTIVE_REQUESTS = 128;
 const MAX_ACTIVE_JOBS = 32;

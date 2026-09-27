@@ -74,6 +74,12 @@ describe("MarpPPT skill decision guidance", () => {
 });
 
 describe("package consistency checks", () => {
+  it("keeps the updater's MCP smoke check aligned with the public tool set", async () => {
+    const updater = await readFile(resolve(root, "scripts/update-codex-macos.sh"), "utf8");
+    expect(updater).toContain("prepare_markdown_sources");
+    expect(updater).toContain("save_markdown_draft");
+  });
+
   it("rejects mismatched server IDs, HTTP mode, and paths outside the plugin", async () => {
     const temporary = await mkdtemp(join(tmpdir(), "marpppt-package-check-"));
     const clone = async (path: string) => {

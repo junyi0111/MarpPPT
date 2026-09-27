@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { prepareSourceMaterial, type SourceMaterialDependencies } from "../../src/source/source-material.js";
+import { createPinnedLookup, prepareSourceMaterial, type SourceMaterialDependencies } from "../../src/source/source-material.js";
 
 const baseInput = {
   sources: [{ kind: "url" as const, url: "https://example.com/article" }],
@@ -21,6 +21,18 @@ function deps(overrides: Partial<SourceMaterialDependencies> = {}): SourceMateri
 }
 
 describe("source material preparation", () => {
+  it("returns Node's expected address array when a pinned lookup requests all results", async () => {
+    const lookup = createPinnedLookup("93.184.216.34");
+    await new Promise<void>((resolve, reject) => lookup("example.com", { all: true }, (error, addresses) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      expect(addresses).toEqual([{ address: "93.184.216.34", family: 4 }]);
+      resolve();
+    }));
+  });
+
   it("extracts bounded visible HTML text and normalizes options", async () => {
     const result = await prepareSourceMaterial(baseInput, deps());
     expect(result.status).toBe("ready");
@@ -30,7 +42,7 @@ describe("source material preparation", () => {
     expect(result.sourceDigest).toMatch(/^[a-f0-9]{64}$/u);
   });
 
-  it.each(["127.0.0.1", "192.0.0.1"])("rejects non-public DNS result %s before making a request", async (address) => {
+  it.each(["127.0.0.1", "192.0.0.1", "2001:2::1"])("rejects non-public DNS result %s before making a request", async (address) => {
     const fetchSource = vi.fn();
     const result = await prepareSourceMaterial(baseInput, deps({
       resolveHostname: async () => [address],
@@ -39,6 +51,27 @@ describe("source material preparation", () => {
     expect(result.status).toBe("failed");
     expect(result.failures[0]).toMatchObject({ code: "PRIVATE_ADDRESS_BLOCKED", stage: "fetch" });
     expect(fetchSource).not.toHaveBeenCalled();
+  });
+
+  it("bounds DNS resolution by the source timeout", async () => {
+    const result = await prepareSourceMaterial(baseInput, deps({
+      timeoutMs: 5,
+      resolveHostname: async () => await new Promise<string[]>(() => undefined),
+    }));
+    expect(result.failures[0]).toMatchObject({ code: "SOURCE_FETCH_TIMEOUT", retryable: true });
+  });
+
+  it("bounds source titles before publishing the MCP output", async () => {
+    const result = await prepareSourceMaterial(baseInput, deps({
+      fetchSource: async () => ({
+        status: 200,
+        finalUrl: "https://example.com/article",
+        headers: { "content-type": "text/html" },
+        body: Buffer.from(`<title>${"x".repeat(200)}</title><p>Visible fact.</p>`, "utf8"),
+      }),
+    }));
+    expect(result.sources[0]?.title).toHaveLength(160);
+    expect(result.sources[0]?.content).toContain("Visible fact.");
   });
 
   it("rejects redirects and response-origin changes", async () => {

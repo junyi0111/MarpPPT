@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { lookup } from "node:dns/promises";
+import type { LookupFunction } from "node:net";
 import { request as httpsRequest } from "node:https";
 import { isIP } from "node:net";
 import type { PageSelector, SourceFileReference, SourceMaterialInput, SourceFailure, MarkdownDraftOptions } from "./source-contracts.js";
@@ -59,6 +60,17 @@ export interface PreparedSourceContext {
 
 const preparedContexts = new Map<string, PreparedSourceContext>();
 
+export function createPinnedLookup(address: string): LookupFunction {
+  const family = isIP(address) === 6 ? 6 : 4;
+  return (_hostname, options, callback) => {
+    if (typeof options === "object" && options !== null && "all" in options && options.all) {
+      callback(null, [{ address, family }]);
+      return;
+    }
+    callback(null, address, family);
+  };
+}
+
 /** Keep only the opaque binding needed by the draft publisher, never source text. */
 export function rememberPreparedSourceMaterial(output: PreparedSourceMaterial): void {
   if (output.sources.length === 0) return;
@@ -105,11 +117,37 @@ function isPrivateIPv4(address: string): boolean {
     || (a === 203 && b === 0 && c === 113);
 }
 
-function isPrivateIPv6(address: string): boolean {
+function parseIPv6(address: string): bigint | undefined {
   const normalized = address.toLowerCase().split("%", 1)[0] ?? "";
-  if (normalized === "::" || normalized === "::1" || normalized.startsWith("::ffff:")) return true;
-  if (!/^[23]/u.test(normalized)) return true;
-  return normalized.startsWith("2001:db8:") || normalized.startsWith("2001:0:") || normalized.startsWith("2002:");
+  const halves = normalized.split("::");
+  if (halves.length > 2) return undefined;
+  const left = halves[0] ? halves[0].split(":") : [];
+  const right = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  const missing = halves.length === 2 ? 8 - left.length - right.length : 0;
+  if (missing < 0 || (halves.length === 1 && left.length !== 8)) return undefined;
+  const groups = [...left, ...Array.from({ length: missing }, () => "0"), ...right];
+  if (groups.length !== 8 || groups.some((group) => !/^[0-9a-f]{1,4}$/u.test(group))) return undefined;
+  return groups.reduce((value, group) => (value << 16n) | BigInt(Number.parseInt(group, 16)), 0n);
+}
+
+function inIPv6Range(value: bigint, base: string, prefix: number): boolean {
+  const parsed = parseIPv6(base);
+  if (parsed === undefined) return true;
+  const mask = prefix === 0 ? 0n : ((1n << BigInt(prefix)) - 1n) << BigInt(128 - prefix);
+  return (value & mask) === (parsed & mask);
+}
+
+function isPrivateIPv6(address: string): boolean {
+  const value = parseIPv6(address);
+  if (value === undefined || (value >> 125n) !== 1n) return true;
+  const specialRanges: Array<[string, number]> = [
+    ["::", 128], ["::1", 128], ["::ffff:0:0", 96],
+    ["fc00::", 7], ["fe80::", 10], ["ff00::", 8],
+    ["2001:0::", 32], ["2001:1::", 48], ["2001:2::", 48],
+    ["2001:3::", 32], ["2001:4:112::", 48], ["2001:10::", 28],
+    ["2001:20::", 28], ["2001:db8::", 32], ["2002::", 16], ["3ffe::", 16],
+  ];
+  return specialRanges.some(([base, prefix]) => inIPv6Range(value, base, prefix));
 }
 
 function isPrivateAddress(address: string): boolean {
@@ -117,10 +155,22 @@ function isPrivateAddress(address: string): boolean {
   return version === 4 ? isPrivateIPv4(address) : version === 6 ? isPrivateIPv6(address) : true;
 }
 
-async function publicAddresses(url: URL, resolveHostname: (hostname: string) => Promise<string[]>): Promise<string[]> {
+async function publicAddresses(url: URL, resolveHostname: (hostname: string) => Promise<string[]>, timeoutMs: number): Promise<string[]> {
   const hostname = url.hostname.replace(/^\[|\]$/gu, "");
   const literal = isIP(hostname);
-  const addresses = literal ? [hostname] : await resolveHostname(hostname);
+  let timeoutHandle: NodeJS.Timeout | undefined;
+  const resolution = literal
+    ? Promise.resolve([hostname])
+    : resolveHostname(hostname);
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timeoutHandle = setTimeout(() => reject(new SourceMaterialError("SOURCE_FETCH_TIMEOUT", "fetch", "The source host lookup exceeded its time limit.", true)), timeoutMs);
+  });
+  let addresses: string[];
+  try {
+    addresses = await Promise.race([resolution, timeout]);
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
   if (addresses.length === 0 || addresses.some(isPrivateAddress)) {
     throw new SourceMaterialError("PRIVATE_ADDRESS_BLOCKED", "fetch", "The source host resolves to a private or non-public network address.", false);
   }
@@ -148,7 +198,7 @@ async function fetchHttpsSource(url: URL, addresses: string[], signal: AbortSign
       port: url.port || undefined,
       path: `${url.pathname || "/"}${url.search}`,
       servername: url.hostname,
-      lookup: (_hostname, _options, callback) => callback(null, address, isIP(address) === 6 ? 6 : 4),
+      lookup: createPinnedLookup(address),
       headers: { accept: "text/html, text/plain, text/markdown, application/pdf" },
     }, (response) => {
       const chunks: Buffer[] = [];
@@ -201,11 +251,15 @@ export class SourceMaterialError extends Error {
 }
 
 function failure(sourceId: string, error: unknown): SourceFailure {
+  const safeMessage = (message: string, fallback: string): string => {
+    const normalized = message.replace(/\s+/gu, " ").trim();
+    return (normalized || fallback).slice(0, 500);
+  };
   if (error instanceof SourceMaterialError) {
-    return { code: error.code, stage: error.stage, sourceId, message: error.message, retryable: error.retryable };
+    return { code: error.code, stage: error.stage, sourceId, message: safeMessage(error.message, "The source could not be prepared."), retryable: error.retryable };
   }
   if (error instanceof PdfTextError) {
-    return { code: error.code, stage: "extract", sourceId, message: error.message, retryable: error.code === "PDF_EXTRACT_TIMEOUT" };
+    return { code: error.code, stage: "extract", sourceId, message: safeMessage(error.message, "The PDF text extractor failed."), retryable: error.code === "PDF_EXTRACT_TIMEOUT" };
   }
   return { code: "SOURCE_FETCH_FAILED", stage: "fetch", sourceId, message: "The source could not be prepared.", retryable: true };
 }
@@ -232,15 +286,20 @@ function decodeEntities(value: string): string {
     .replace(/&quot;/gu, '"').replace(/&#39;|&apos;/gu, "'");
 }
 
+function boundedTitle(value: string, fallback: string): string {
+  const normalized = value.replace(/\s+/gu, " ").trim() || fallback;
+  return Array.from(normalized).slice(0, 160).join("");
+}
+
 function htmlText(html: string): { title: string; content: string } {
-  const title = decodeEntities(html.match(/<title[^>]*>([\s\S]*?)<\/title>/iu)?.[1]?.trim() ?? "").replace(/\s+/gu, " ");
+  const title = boundedTitle(decodeEntities(html.match(/<title[^>]*>([\s\S]*?)<\/title>/iu)?.[1]?.trim() ?? ""), "Web source");
   const content = decodeEntities(html
     .replace(/<!--[\s\S]*?-->/gu, " ")
     .replace(/<(script|style|noscript|template)\b[^>]*>[\s\S]*?<\/\1>/giu, " ")
     .replace(/<[^>]+>/gu, " "))
     .replace(/\s+/gu, " ").trim();
   if (!content) throw new SourceMaterialError("SOURCE_EMPTY", "extract", "The source did not contain readable text.", false);
-  return { title: title || "Web source", content };
+  return { title, content };
 }
 
 function safeUrlDisplay(url: URL): string {
@@ -261,11 +320,11 @@ async function prepareUrlSource(
   deps: Required<Pick<SourceMaterialDependencies, "resolveHostname" | "fetchSource" | "extractPdfText">> & { timeoutMs: number; maxResponseBytes: number },
 ): Promise<PreparedSource> {
   const url = new URL(source.url);
-  const addresses = await publicAddresses(url, deps.resolveHostname);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), deps.timeoutMs);
   let timeoutHandle: NodeJS.Timeout | undefined;
   try {
+    const addresses = await publicAddresses(url, deps.resolveHostname, deps.timeoutMs);
     const responsePromise = deps.fetchSource(url, addresses, controller.signal, deps.maxResponseBytes);
     const timeout = new Promise<never>((_resolve, reject) => {
       timeoutHandle = setTimeout(() => reject(new SourceMaterialError("SOURCE_FETCH_TIMEOUT", "fetch", "The source request exceeded its time limit.", true)), deps.timeoutMs);
@@ -277,16 +336,16 @@ async function prepareUrlSource(
     if (response.body.byteLength > deps.maxResponseBytes) throw new SourceMaterialError("SOURCE_LIMIT_EXCEEDED", "fetch", "The source response exceeds the 8 MiB limit.", false);
     const type = contentType(response);
     if (isPdf(response.body, type)) {
-      return { id: sourceId, kind: "url", title: source.label ?? "PDF source", locator: safeUrlDisplay(url), content: await deps.extractPdfText(response.body, undefined), characterCount: 0 };
+      return { id: sourceId, kind: "url", title: boundedTitle(source.label ?? "PDF source", "PDF source"), locator: safeUrlDisplay(url), content: await deps.extractPdfText(response.body, undefined), characterCount: 0 };
     }
     if (type === "text/html" || type === undefined) {
       const parsed = htmlText(decodeText(response.body));
-      return { id: sourceId, kind: "url", title: source.label ?? parsed.title, locator: safeUrlDisplay(url), content: parsed.content, characterCount: parsed.content.length };
+      return { id: sourceId, kind: "url", title: boundedTitle(source.label ?? parsed.title, "Web source"), locator: safeUrlDisplay(url), content: parsed.content, characterCount: parsed.content.length };
     }
     if (type === "text/plain" || type === "text/markdown") {
       const content = decodeText(response.body).trim();
       if (!content) throw new SourceMaterialError("SOURCE_EMPTY", "extract", "The source did not contain readable text.", false);
-      return { id: sourceId, kind: "url", title: source.label ?? "Text source", locator: safeUrlDisplay(url), content, characterCount: content.length };
+      return { id: sourceId, kind: "url", title: boundedTitle(source.label ?? "Text source", "Text source"), locator: safeUrlDisplay(url), content, characterCount: content.length };
     }
     throw new SourceMaterialError("SOURCE_UNSUPPORTED_TYPE", "extract", "The URL did not return HTML, text, Markdown, or PDF content.", false);
   } finally {
@@ -310,7 +369,7 @@ async function preparePdfSource(
   return {
     id: sourceId,
     kind: "pdf",
-    title: source.file.fileName,
+    title: boundedTitle(source.file.fileName, "PDF source"),
     locator: `attachment:${source.file.fileName}`,
     ...(source.pages ? { pageRange: source.pages } : {}),
     content: content.trim(),

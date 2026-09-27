@@ -64,7 +64,6 @@ async function runPdfTextCommand(
   return await new Promise<Buffer>((resolve, reject) => {
     const child = spawn(command, args, { shell: false, stdio: ["ignore", "pipe", "pipe"] });
     const stdout: Buffer[] = [];
-    const stderr: Buffer[] = [];
     let outputBytes = 0;
     let settled = false;
     const fail = (error: PdfTextError) => {
@@ -95,9 +94,9 @@ async function runPdfTextCommand(
       }
       stdout.push(chunk);
     });
-    child.stderr.on("data", (chunk: Buffer) => {
-      if (Buffer.concat(stderr).byteLength < 32 * 1024) stderr.push(chunk.subarray(0, 32 * 1024));
-    });
+    // Drain stderr to avoid child-process backpressure, but never expose tool
+    // output because it may contain private temporary paths or unbounded data.
+    child.stderr.on("data", () => undefined);
     child.once("error", (error: NodeJS.ErrnoException) => {
       fail(new PdfTextError(
         error.code === "ENOENT" ? "PDF_EXTRACTOR_UNAVAILABLE" : "PDF_EXTRACT_FAILED",
@@ -109,8 +108,7 @@ async function runPdfTextCommand(
       context.signal.removeEventListener("abort", abort);
       if (settled) return;
       if (code !== 0) {
-        const detail = Buffer.concat(stderr).toString("utf8").trim();
-        fail(new PdfTextError("PDF_EXTRACT_FAILED", `pdftotext failed${detail ? `: ${detail}` : ` with exit code ${code}`}`));
+        fail(new PdfTextError("PDF_EXTRACT_FAILED", `pdftotext failed with exit code ${code ?? "unknown"}.`));
         return;
       }
       finish(Buffer.concat(stdout, outputBytes));

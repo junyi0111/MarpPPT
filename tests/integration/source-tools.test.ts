@@ -136,18 +136,24 @@ describe("source preparation and Markdown draft MCP tools", () => {
 
   it("rejects traversal filenames before writing a draft", async () => {
     const { client, server, artifactStore } = await connect();
+    const prepared = await client.callTool({
+      name: "prepare_markdown_sources",
+      arguments: { sources: [{ kind: "url", url: "https://example.com/article" }], options: {} },
+    });
+    const preparedValue = prepared.structuredContent as { jobId: string; sources: Array<{ id: string }>; options: object };
     const result = await client.callTool({
       name: "save_markdown_draft",
       arguments: {
-        sourceJobId: "00000000-0000-4000-8000-000000000099",
-        sourceIds: ["source-00000000-0000-4000-8000-000000000099-1"],
+        sourceJobId: preparedValue.jobId,
+        sourceIds: [preparedValue.sources[0]!.id],
         title: "Draft",
         fileName: "../escape.md",
         markdown: "# Draft\n",
-        options: {},
+        options: preparedValue.options,
       },
     });
     expect(result.isError).toBe(true);
+    expect(result.structuredContent).toMatchObject({ failure: { code: "DRAFT_INVALID" } });
     await client.close();
     await server.close();
     await artifactStore.close?.();

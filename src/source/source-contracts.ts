@@ -59,7 +59,12 @@ const pdfSourceSchema = z.object({
 
 export const SourceMaterialInputSchema = z.object({
   sources: z.array(z.discriminatedUnion("kind", [urlSourceSchema, pdfSourceSchema])).min(1).max(8),
-  options: MarkdownDraftOptionsSchema.default({}),
+  options: MarkdownDraftOptionsSchema.default({
+    complexity: "standard",
+    style: "tech-editorial",
+    summary: "moderate",
+    language: "auto",
+  }),
 }).strict();
 
 export const SourceFailureSchema = z.object({

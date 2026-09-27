@@ -11,8 +11,10 @@ import type { ProbeFileRef } from "./attachment-reference.js";
 const ROOT = join(tmpdir(), `marpppt-attachments-${process.getuid?.() ?? "local"}`);
 const MAX_MARKDOWN = 2 * 1024 * 1024;
 const MAX_IMAGE = 10 * 1024 * 1024;
+const MAX_PDF = 32 * 1024 * 1024;
 const MAX_TOTAL = 50 * 1024 * 1024;
 const MAX_IMAGES = 30;
+const MAX_RESEARCH_PDFS = 8;
 const LIFETIME_MS = 30 * 60_000;
 const ID = /^[a-f0-9]{32}$/;
 
@@ -51,6 +53,12 @@ export interface StagedAttachments {
   sourceFile: ProbeFileRef;
   imageFiles: ProbeFileRef[];
   imageAssetIds: string[];
+  expiresAt: number;
+}
+
+export interface StagedResearchAttachments {
+  jobId: string;
+  pdfFiles: ProbeFileRef[];
   expiresAt: number;
 }
 
@@ -116,6 +124,12 @@ async function readRegularFile(path: string, maximum: number): Promise<Buffer> {
 function validateSource(bytes: Buffer, fileName: string): void {
   if (!fileName.toLowerCase().endsWith(".md")) throw new Error("Source must be a Markdown .md file");
   new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+}
+
+function validatePdf(bytes: Buffer, fileName: string): void {
+  if (!fileName.toLowerCase().endsWith(".pdf") || !bytes.subarray(0, 5).equals(Buffer.from("%PDF-", "ascii"))) {
+    throw new Error("Research attachment must be a PDF with a valid PDF signature");
+  }
 }
 
 async function imageMime(bytes: Buffer, fileName: string): Promise<string> {
@@ -184,10 +198,14 @@ function mac(body: string, key: Buffer): string {
   return createHmac("sha256", key).update(body).digest("hex");
 }
 
-async function copyAttachment(path: string, jobDir: string, maximum: number, source: boolean): Promise<StagedFile> {
+async function copyAttachment(path: string, jobDir: string, maximum: number, kind: "markdown" | "image" | "pdf"): Promise<StagedFile> {
   const fileName = safeName(path);
   const bytes = await readRegularFile(path, maximum);
-  const mimeType = source ? (validateSource(bytes, fileName), "text/markdown") : await imageMime(bytes, fileName);
+  const mimeType = kind === "markdown"
+    ? (validateSource(bytes, fileName), "text/markdown")
+    : kind === "pdf"
+      ? (validatePdf(bytes, fileName), "application/pdf")
+      : await imageMime(bytes, fileName);
   const assetId = id();
   await writeFile(join(jobDir, assetId), bytes, { flag: "wx", mode: 0o600 });
   return {
@@ -217,11 +235,11 @@ export async function stageAttachments(
   await mkdir(workingDir, { mode: 0o700 });
   let published = false;
   try {
-    const source = await copyAttachment(input.sourcePath, workingDir, MAX_MARKDOWN, true);
+    const source = await copyAttachment(input.sourcePath, workingDir, MAX_MARKDOWN, "markdown");
     const images: StagedFile[] = [];
     let total = source.byteLength;
     for (const imagePath of input.imagePaths) {
-      const image = await copyAttachment(imagePath, workingDir, MAX_IMAGE, false);
+      const image = await copyAttachment(imagePath, workingDir, MAX_IMAGE, "image");
       total += image.byteLength;
       if (total > MAX_TOTAL) throw new Error("Attachments exceed 50 MB total");
       images.push(image);
@@ -252,12 +270,57 @@ export async function stageAttachments(
   }
 }
 
+export async function stageResearchAttachments(
+  input: { pdfPaths: string[] },
+  options: { retentionMs?: number } = {},
+): Promise<StagedResearchAttachments> {
+  if (!Array.isArray(input.pdfPaths) || input.pdfPaths.length < 1 || input.pdfPaths.length > MAX_RESEARCH_PDFS) {
+    throw new Error("Provide between one and eight PDF research attachments");
+  }
+  const retentionMs = options.retentionMs ?? LIFETIME_MS;
+  if (!Number.isInteger(retentionMs) || retentionMs < 1 || retentionMs > LIFETIME_MS) {
+    throw new Error("Invalid attachment retention period");
+  }
+  const key = await signingKey();
+  const jobId = id();
+  const jobDir = stagedJobDirectory(jobId);
+  const workingDir = join(ROOT, `.staging-${jobId}`);
+  await mkdir(workingDir, { mode: 0o700 });
+  let published = false;
+  try {
+    const pdfFiles: StagedFile[] = [];
+    let total = 0;
+    for (const pdfPath of input.pdfPaths) {
+      const pdf = await copyAttachment(pdfPath, workingDir, MAX_PDF, "pdf");
+      total += pdf.byteLength;
+      if (total > MAX_TOTAL) throw new Error("Research PDF attachments exceed 50 MB total");
+      pdfFiles.push(pdf);
+    }
+    const body: Omit<Manifest, "mac"> = {
+      version: 1,
+      jobId,
+      expiresAt: Date.now() + retentionMs,
+      files: pdfFiles,
+    };
+    const manifest: Manifest = { ...body, mac: mac(manifestBody(body), key) };
+    await writeFile(join(workingDir, "manifest.json"), JSON.stringify(manifest), { flag: "wx", mode: 0o600 });
+    await rename(workingDir, jobDir);
+    published = true;
+    await startJobReaper(jobDir, Math.max(1, body.expiresAt - Date.now()));
+    return { jobId, pdfFiles: pdfFiles.map((pdf) => fileRef(jobId, pdf)), expiresAt: body.expiresAt };
+  } catch (error) {
+    await rm(workingDir, { recursive: true, force: true });
+    if (published) await rm(jobDir, { recursive: true, force: true });
+    throw error;
+  }
+}
+
 function parseManifest(bytes: Buffer, jobId: string, key: Buffer): Manifest {
   const parsed: unknown = JSON.parse(bytes.toString("utf8"));
   if (!parsed || typeof parsed !== "object") throw new Error("Invalid staged attachment manifest");
   const manifest = parsed as Manifest;
   if (manifest.version !== 1 || manifest.jobId !== jobId || !Number.isFinite(manifest.expiresAt) ||
-      !Array.isArray(manifest.files) || manifest.files.length < 1 || manifest.files.length > MAX_IMAGES + 1 ||
+      !Array.isArray(manifest.files) || manifest.files.length < 1 || manifest.files.length > MAX_IMAGES + MAX_RESEARCH_PDFS + 1 ||
       typeof manifest.mac !== "string" || !/^[a-f0-9]{64}$/.test(manifest.mac)) {
     throw new Error("Invalid staged attachment manifest");
   }
@@ -288,12 +351,13 @@ export async function readStagedAttachment(ref: ProbeFileRef, now = Date.now()):
   if (!file || file.fileName !== ref.fileName || file.mimeType !== ref.mimeType) {
     throw new Error("Staged attachment reference does not match manifest");
   }
-  const maximum = file.mimeType === "text/markdown" ? MAX_MARKDOWN : MAX_IMAGE;
+  const maximum = file.mimeType === "text/markdown" ? MAX_MARKDOWN : file.mimeType === "application/pdf" ? MAX_PDF : MAX_IMAGE;
   const bytes = await readRegularFile(join(jobDir, file.id), maximum);
   if (bytes.length !== file.byteLength || createHash("sha256").update(bytes).digest("hex") !== file.sha256) {
     throw new Error("Staged attachment bytes were altered");
   }
   if (file.mimeType === "text/markdown") validateSource(bytes, file.fileName);
+  else if (file.mimeType === "application/pdf") validatePdf(bytes, file.fileName);
   else if (await imageMime(bytes, file.fileName) !== file.mimeType) throw new Error("Staged image type changed");
   return bytes;
 }
@@ -340,16 +404,21 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const args = process.argv.slice(2);
   let sourcePath: string | undefined;
   const imagePaths: string[] = [];
+  const pdfPaths: string[] = [];
   for (let index = 0; index < args.length; index += 2) {
     const flag = args[index];
     const value = args[index + 1];
-    if (!value || (flag !== "--source" && flag !== "--image")) throw new Error("Usage: --source file.md [--image file.png ...]");
+    if (!value || (flag !== "--source" && flag !== "--image" && flag !== "--pdf")) throw new Error("Usage: --source file.md [--image file.png ...] or --pdf file.pdf [--pdf other.pdf ...]");
     if (flag === "--source") {
       if (sourcePath) throw new Error("Provide exactly one source Markdown file");
       sourcePath = value;
-    } else imagePaths.push(value);
+    } else if (flag === "--image") imagePaths.push(value);
+    else pdfPaths.push(value);
   }
-  if (!sourcePath) throw new Error("Provide one source Markdown file");
+  if (pdfPaths.length > 0 && (sourcePath || imagePaths.length > 0)) throw new Error("Use either Markdown/images or PDF research attachments, not both");
+  if (!sourcePath && pdfPaths.length === 0) throw new Error("Provide one source Markdown file or at least one PDF research attachment");
   await cleanExpiredStagedJobs();
-  process.stdout.write(JSON.stringify(await stageAttachments({ sourcePath, imagePaths })) + "\n");
+  process.stdout.write(JSON.stringify(pdfPaths.length > 0
+    ? await stageResearchAttachments({ pdfPaths })
+    : await stageAttachments({ sourcePath: sourcePath!, imagePaths })) + "\n");
 }

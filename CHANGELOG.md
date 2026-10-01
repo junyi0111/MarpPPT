@@ -16,6 +16,7 @@
 
 - Report unsupported equations explicitly instead of silently losing mathematical notation.
 - Synchronize preview and HTTP worker timeout fixtures with actual child-process and cleanup readiness.
+- Require a continuous rectangular outline and an empty center before flagging raster replacement glyphs, avoiding false failures on correctly rendered CJK text in Linux previews.
 
 ### Security
 

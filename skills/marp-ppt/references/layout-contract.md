@@ -14,6 +14,23 @@ This file is the shared layout reference for the `marp-ppt` Skill.
 
 Vertically center every editable text box, including titles, subtitles, paragraph/list items, diagram labels, and table cells. Use `valign: mid` with equal top and bottom inner spacing; keep horizontal alignment as defined by the slide template. If text does not fit, split or summarize it under the overflow contract rather than top-aligning it or shrinking below the font floor.
 
+## Inline emphasis
+
+For a key phrase inside a paragraph or bullet, keep the block's plain `text` and optionally add `runs`. Each run has `text`, optional `bold: true`, and optional `color: "accent"`. The runs must concatenate to exactly the block's `text`; use the theme's controlled accent color instead of arbitrary hex or CSS. For example:
+
+```json
+{
+  "id": "result",
+  "text": "準確率由 32% 提升至 62%",
+  "runs": [
+    { "text": "準確率由 32% 提升至 " },
+    { "text": "62%", "bold": true, "color": "accent" }
+  ]
+}
+```
+
+Use emphasis sparingly so one or two facts draw attention. The PPTX keeps the runs inside the same editable text box, and the Marp source uses the same styling. Do not put raw HTML, CSS, URLs, or image syntax into text runs. Keep a LaTeX expression intact within one run, or place it in its own block, so styling cannot cut a formula in half.
+
 ## Controlled slide templates
 
 Use only the canonical `PresentationPlan` layouts: `cover`, `section`, `takeaway`, `bullets`, `image-text`, `comparison`, `image`, `chart`, `table`, `diagram`, and `closing`. A page should make one main point. Use 3–5 bullets for a regular bullets slide; split or summarize excess text rather than shrinking the font below its floor.

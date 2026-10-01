@@ -5,8 +5,9 @@ import type {
   SlidePlan,
   TableData,
   TextBlock,
+  TextRun,
 } from "../contracts/presentation-plan.js";
-import { normalizeMathText } from "../content/math-text.js";
+import { normalizeMathText, splitMathSegments } from "../content/math-text.js";
 import { parseMetricComparison } from "../content/metric-comparison.js";
 import { getTextBox, type Box, type Theme } from "./geometry.js";
 
@@ -21,6 +22,7 @@ export interface TextLayoutObject extends LayoutBase {
   kind: "text";
   role: TextRole;
   text: string;
+  runs?: Array<{ text: string; bold?: boolean; color?: string }>;
   fontFace: string;
   fontSize: number;
   minFontSize: number;
@@ -36,6 +38,13 @@ export interface ImageLayoutObject extends LayoutBase {
   assetId: string;
   alt: string;
   fit: "contain" | "cover";
+}
+
+/** Display equations are independently selectable images in PowerPoint. */
+export interface MathLayoutObject extends LayoutBase {
+  kind: "math";
+  latex: string;
+  color: string;
 }
 
 export interface ShapeLayoutObject extends LayoutBase {
@@ -83,7 +92,7 @@ export interface LineLayoutObject extends LayoutBase {
   endArrow: boolean;
 }
 
-export type LayoutObject = TextLayoutObject | ImageLayoutObject | ShapeLayoutObject | TableLayoutObject | ChartLayoutObject | LineLayoutObject;
+export type LayoutObject = TextLayoutObject | ImageLayoutObject | MathLayoutObject | ShapeLayoutObject | TableLayoutObject | ChartLayoutObject | LineLayoutObject;
 
 function textObject(
   slide: SlidePlan,
@@ -92,16 +101,24 @@ function textObject(
   role: TextRole,
   text: string,
   box: Box,
-  options: { fontSize?: number; minFontSize?: number; maxLines?: number; color?: string; bold?: boolean; align?: TextLayoutObject["align"] } = {},
+  options: { fontSize?: number; minFontSize?: number; maxLines?: number; color?: string; bold?: boolean; align?: TextLayoutObject["align"]; runs?: TextRun[] } = {},
 ): TextLayoutObject {
   const note = role === "source";
+  const dark = slide.layout === "cover" || slide.layout === "section" || slide.layout === "closing";
+  const accentColor = dark ? (theme.colors.accentCyan ?? theme.colors.accent) : theme.colors.accent;
+  const runs = options.runs?.map((run) => ({
+    text: normalizeMathText(run.text),
+    ...(run.bold === undefined ? {} : { bold: run.bold }),
+    ...(run.color === "accent" ? { color: accentColor } : {}),
+  }));
   return {
     kind: "text",
     id,
     slideId: slide.id,
     ...box,
     role,
-    text: normalizeMathText(text),
+    text: runs ? runs.map((run) => run.text).join("") : normalizeMathText(text),
+    ...(runs === undefined ? {} : { runs }),
     fontFace: theme.typography.fontFace,
     fontSize: options.fontSize ?? (note ? theme.typography.note : theme.typography.body),
     minFontSize: options.minFontSize ?? (note ? theme.typography.minNote : theme.typography.minBody),
@@ -162,8 +179,23 @@ function blockObjects(
       w: box.w,
       h: itemHeight,
     };
-    const metric = metricComparisonObjects(slide, theme, block.id, block.text, blockBox, options.fontSize);
-    return metric ?? [textObject(slide, theme, `${slide.id}:text:${block.id}`, role, block.text, blockBox, { fontSize: options.fontSize })];
+    const segments = splitMathSegments(block.text.trim());
+    if (!block.runs && segments.length === 1 && segments[0]?.kind === "math") {
+      const dark = slide.layout === "cover" || slide.layout === "section" || slide.layout === "closing";
+      return [{
+        kind: "math",
+        id: `${slide.id}:math:${block.id}`,
+        slideId: slide.id,
+        ...blockBox,
+        latex: segments[0].value,
+        color: dark ? (theme.colors.darkBody ?? theme.colors.white) : theme.colors.body,
+      } satisfies MathLayoutObject];
+    }
+    const metric = block.runs ? undefined : metricComparisonObjects(slide, theme, block.id, block.text, blockBox, options.fontSize);
+    return metric ?? [textObject(slide, theme, `${slide.id}:text:${block.id}`, role, block.text, blockBox, {
+      fontSize: options.fontSize,
+      runs: block.runs,
+    })];
   });
 }
 

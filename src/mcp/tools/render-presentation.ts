@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { UnsupportedMathError } from "../../content/math-text.js";
 import { constants } from "node:fs";
 import { lstat, open, readFile, realpath } from "node:fs/promises";
 import { isAbsolute, join, relative, sep } from "node:path";
@@ -311,7 +312,16 @@ function canonicalPlanWithAppendix(plan: PresentationPlan, images: ResolvedAttac
 }
 
 function layoutIssues(plan: PresentationPlan, theme: Theme): LayoutIssue[] {
-  return plan.slides.flatMap((slide) => findOverflow(buildSlideLayout(slide, theme), getCanvas(theme)));
+  return plan.slides.flatMap((slide) => {
+    try {
+      return findOverflow(buildSlideLayout(slide, theme), getCanvas(theme));
+    } catch (error) {
+      if (error instanceof UnsupportedMathError) {
+        throw new PptxRenderError(`Slide ${slide.id}: ${error.message}`, "MATH_RENDER_FAILED", { slideId: slide.id });
+      }
+      throw error;
+    }
+  });
 }
 
 function safeAttachmentError(error: unknown): { code: string; message: string; userAction: string; affected?: string } {
@@ -526,6 +536,13 @@ async function renderPresentationCore(
         break;
       } catch (error) {
         lastPptxError = error;
+        if (error instanceof PptxRenderError && error.code === "MATH_RENDER_FAILED") {
+          return failure(jobId, "RENDER_FAILED", "verify", error.message, {
+            ...(error.slideId ? { affectedFileOrSlide: error.slideId } : {}),
+            userAction: "Correct the indicated LaTeX equation or split it into a shorter standalone formula block, then retry.",
+            retryable: false,
+          });
+        }
         if (error instanceof PptxRenderError && error.code === "PPTX_LAYOUT_INVALID" && error.issues?.length) {
           const issues = error.issues.filter((issue): issue is LayoutIssue => "actionable" in issue && issue.actionable);
           if (issues.length) {
@@ -624,6 +641,13 @@ async function renderPresentationCore(
       });
     }
   } catch (error) {
+    if (error instanceof PptxRenderError && error.code === "MATH_RENDER_FAILED") {
+      return failure(jobId, "RENDER_FAILED", currentStage === "plan" ? "plan" : "verify", error.message, {
+        ...(error.slideId ? { affectedFileOrSlide: error.slideId } : {}),
+        userAction: "Correct the indicated LaTeX expression and retry.",
+        retryable: false,
+      });
+    }
     if (currentStage === "attachments") {
       const mapped = safeAttachmentError(error);
       return failure(jobId, mapped.code, "attachments", mapped.message, {

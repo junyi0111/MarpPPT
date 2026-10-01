@@ -37,9 +37,16 @@ Its quality goals are **clear information, reliable layout, repeatable productio
 - **Consistent layout:** includes the Tech Editorial design system, bilingual font settings, editable table rules, and spacing guidance.
 - **Selectable font themes:** defaults to Noto Sans TC and also supports Noto Serif TC, Source Han Serif TC, and IBM Plex Sans TC. The local MCP can install a missing family from an official source into the user's font directory, then rerun preflight; see [font themes](docs/operations/fonts.md).
 - **Images handled carefully:** keeps each image's aspect ratio and uses `contain` fit; text boxes are vertically centered.
+- **Math and emphasis:** preserves LaTeX in Marp, typesets standalone equations locally for PPTX, and keeps selected bold or accent-colored phrases editable as PowerPoint text runs.
 - **A checked package:** validates every `[Content_Types].xml` Override and internal relationship target in the PPTX archive.
 - **Useful deliverables:** returns editable `.pptx` and `.marp.md` files, plus an image bundle when needed.
 - **Source checks:** includes a local PDF text extraction helper for optional source and page-number verification.
+
+## Equations and highlighted text
+
+Put a display equation by itself in a slide text block, for example `\[\frac{QK^\top}{\sqrt{d_k}}\]`. Marp keeps the LaTeX source. The PPTX typesets it locally with MathJax as a transparent image, so you can select, move, resize, or replace the complete equation; its original LaTeX is retained in the image's alternative text. **The equation itself is not a native PowerPoint equation for character-by-character editing.** Short inline formulas use editable Unicode or linear mathematical text. Unsupported syntax returns an explicit error instead of silently discarding commands.
+
+For a key phrase, the slide plan can split one editable text box into `runs` with `bold: true` and/or the controlled `color: "accent"` theme token. The concatenated run text must match the block's plain `text` exactly. This keeps normal prose editable while emphasizing one or two facts; see the [layout contract](skills/marp-ppt/references/layout-contract.md) for an example.
 
 ## From URLs or PDFs to a Markdown brief
 

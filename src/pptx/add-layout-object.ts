@@ -4,6 +4,7 @@ import type {
   ImageLayoutObject,
   LayoutObject,
   LineLayoutObject,
+  MathLayoutObject,
   ShapeLayoutObject,
   TableLayoutObject,
   TextLayoutObject,
@@ -20,7 +21,7 @@ export interface PptxApi {
 }
 
 export interface PptxSlideApi {
-  addText(text: string, options: Record<string, unknown>): unknown;
+  addText(text: string | Array<{ text: string; options?: Record<string, unknown> }>, options: Record<string, unknown>): unknown;
   addShape(shapeName: string, options: Record<string, unknown>): unknown;
   addImage(options: Record<string, unknown>): unknown;
   addTable(rows: unknown[], options: Record<string, unknown>): unknown;
@@ -31,6 +32,7 @@ export interface LayoutObjectContext {
   pptx: PptxApi;
   slide: PptxSlideApi;
   assets: ReadonlyMap<string, ResolvedPptxAsset>;
+  mathImages?: ReadonlyMap<string, { data: string; aspectRatio: number }>;
   theme: Theme;
 }
 
@@ -54,7 +56,14 @@ function objectName(id: string): { objectName: string } {
 
 function addText(object: TextLayoutObject, context: LayoutObjectContext): void {
   const fontSize = Math.max(object.fontSize, object.minFontSize);
-  context.slide.addText(object.text, {
+  const text = object.runs?.map((run) => ({
+    text: run.text,
+    options: {
+      ...(run.bold === undefined ? {} : { bold: run.bold }),
+      ...(run.color === undefined ? {} : { color: colorStyle(run.color).color }),
+    },
+  })) ?? object.text;
+  context.slide.addText(text, {
     x: object.x,
     y: object.y,
     w: object.w,
@@ -128,6 +137,22 @@ function addImage(object: ImageLayoutObject, context: LayoutObjectContext): void
     h: object.h,
     sizing: { type: object.fit, w: object.w, h: object.h },
     altText: object.alt,
+    ...objectName(object.id),
+  });
+}
+
+function addMath(object: MathLayoutObject, context: LayoutObjectContext): void {
+  const image = context.mathImages?.get(object.id);
+  if (!image) throw new Error(`Rendered equation image is missing for ${object.id}`);
+  const width = Math.min(object.w, object.h * image.aspectRatio);
+  const height = width / image.aspectRatio;
+  context.slide.addImage({
+    data: image.data,
+    x: object.x + (object.w - width) / 2,
+    y: object.y + (object.h - height) / 2,
+    w: width,
+    h: height,
+    altText: `LaTeX: ${object.latex}`,
     ...objectName(object.id),
   });
 }
@@ -214,6 +239,9 @@ export function addLayoutObject(object: LayoutObject, context: LayoutObjectConte
       return;
     case "image":
       addImage(object, context);
+      return;
+    case "math":
+      addMath(object, context);
       return;
     case "table":
       addTable(object, context);

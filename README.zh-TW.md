@@ -37,9 +37,16 @@ MarpPPT 專注於**快速、成本可控的傳統模板型簡報**。它將現�
 - **一致的版面：** 內建 Tech Editorial 設計、雙語字體、可編輯表格規範與間距設定。
 - **可選字體主題：** 預設使用 Noto Sans TC，也提供 Noto Serif TC、Source Han Serif TC 與 IBM Plex Sans TC；本機 MCP 發現缺少字體時會從官方來源安裝到使用者字體目錄，再通過字型預檢，詳見 [字體主題說明](docs/operations/fonts.md)。
 - **保護圖片比例：** 圖片等比例縮放並使用 `contain`；文字方塊垂直置中。
+- **數學式與重點強調：** Marp 保留 LaTeX；獨立公式由本機排版後放進 PPTX，局部加粗與重點色則保留為可編輯文字。
 - **檢查簡報封裝：** 驗證 PPTX 中 `[Content_Types].xml` 的每筆 Override 和所有內部關係目標。
 - **提供可編輯產物：** 輸出 `.pptx`、`.marp.md`；有圖片時另附圖片資源包。
 - **核對來源：** 附帶本機 PDF 文字擷取工具，可選擇性核對來源和頁碼。
+
+## 數學式與重點文字
+
+需要顯示分數、根號或上下標時，把公式單獨放在一個投影片文字區塊，例如 `\[\frac{QK^\top}{\sqrt{d_k}}\]`。Marp 原始檔保留 LaTeX；PPTX 在本機用 MathJax 排成透明圖片，可整體選取、移動、縮放或替換，圖片替代文字也會保留原始公式。**公式本身不是可逐字修改的 PowerPoint 原生公式。** 句中短公式會改用可編輯的 Unicode／線性數學文字；不支援的語法會明確報錯，不會默默刪掉指令。
+
+若要凸顯結論，可在同一個文字方塊中用 `runs` 指定局部 `bold: true` 與主題重點色 `color: "accent"`。所有片段的文字串接必須與區塊 `text` 完全一致；例如只強調「62%」而非整句。詳細格式見[版面契約](skills/marp-ppt/references/layout-contract.md)。
 
 ## 從網址或 PDF 建立 Markdown 內容
 

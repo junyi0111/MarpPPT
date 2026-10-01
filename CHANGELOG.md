@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.0] - 2026-09-27
+## [0.3.0] - 2026-10-01
 
 ### Added
 
@@ -9,6 +9,13 @@
 - Add one-question drafting preferences for complexity, style, summary depth, language, audience, and requested slide count.
 - Add PDF research staging with signed, expiring local references and a no-shell Poppler extraction boundary.
 - Document source trust boundaries, URL/PDF limits, partial-source failure handling, and the Codex invocation example.
+- Preserve explicit LaTeX in Marp and render standalone equations locally as selectable, aspect-preserving PowerPoint images with source TeX in alternative text.
+- Add editable PowerPoint text runs for controlled bold and theme accent emphasis, with equivalent Marp styling.
+
+### Fixed
+
+- Report unsupported equations explicitly instead of silently losing mathematical notation.
+- Synchronize preview and HTTP worker timeout fixtures with actual child-process and cleanup readiness.
 
 ### Security
 

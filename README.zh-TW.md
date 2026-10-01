@@ -9,7 +9,7 @@
   <a href="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml"><img alt="建置與封裝驗證" src="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT 授權" src="https://img.shields.io/badge/license-MIT-2563EB.svg"></a>
   <img alt="Node.js 22 以上" src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white">
-  <img alt="套件版本 0.2.2" src="https://img.shields.io/badge/package-0.2.2-6D5EF7">
+  <img alt="套件版本 0.3.0" src="https://img.shields.io/badge/package-0.3.0-6D5EF7">
   <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="最近更新" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=last%20update"></a>
 </p>
 
@@ -37,9 +37,30 @@ MarpPPT 專注於**快速、成本可控的傳統模板型簡報**。它將現�
 - **一致的版面：** 內建 Tech Editorial 設計、雙語字體、可編輯表格規範與間距設定。
 - **可選字體主題：** 預設使用 Noto Sans TC，也提供 Noto Serif TC、Source Han Serif TC 與 IBM Plex Sans TC；本機 MCP 發現缺少字體時會從官方來源安裝到使用者字體目錄，再通過字型預檢，詳見 [字體主題說明](docs/operations/fonts.md)。
 - **保護圖片比例：** 圖片等比例縮放並使用 `contain`；文字方塊垂直置中。
+- **數學式與重點強調：** Marp 保留 LaTeX；獨立公式由本機排版後放進 PPTX，局部加粗與重點色則保留為可編輯文字。
 - **檢查簡報封裝：** 驗證 PPTX 中 `[Content_Types].xml` 的每筆 Override 和所有內部關係目標。
 - **提供可編輯產物：** 輸出 `.pptx`、`.marp.md`；有圖片時另附圖片資源包。
 - **核對來源：** 附帶本機 PDF 文字擷取工具，可選擇性核對來源和頁碼。
+
+## 數學式與重點文字
+
+需要顯示分數、根號或上下標時，把公式單獨放在一個投影片文字區塊，例如 `\[\frac{QK^\top}{\sqrt{d_k}}\]`。Marp 原始檔保留 LaTeX；PPTX 在本機用 MathJax 排成透明圖片，可整體選取、移動、縮放或替換，圖片替代文字也會保留原始公式。**公式本身不是可逐字修改的 PowerPoint 原生公式。** 句中短公式會改用可編輯的 Unicode／線性數學文字；不支援的語法會明確報錯，不會默默刪掉指令。
+
+若要凸顯結論，可在同一個文字方塊中用 `runs` 指定局部 `bold: true` 與主題重點色 `color: "accent"`。所有片段的文字串接必須與區塊 `text` 完全一致；例如只強調「62%」而非整句。詳細格式見[版面契約](skills/marp-ppt/references/layout-contract.md)。
+
+## 從網址或 PDF 建立 Markdown 內容
+
+如果使用者還沒有 Markdown，可以直接提供一到八個公開 HTTPS 網址或已授權的 PDF 附件。MarpPPT 會把尚未指定的偏好合併成一次選擇題：**複雜度**（`brief`、`standard`、`detailed`）、**風格**（`tech-editorial`、`academic`、`executive`、`tutorial`）與**摘要程度**（`light`、`moderate`、`deep`）。接著先擷取有界的來源文字，產生可追溯的 Markdown 內容並儲存成私有 Markdown artifact；只有使用者要求時才繼續做 PPTX。
+
+本機 MCP 提供 `prepare_markdown_sources` 與 `save_markdown_draft`。來源只視為不可信的參考資料，不能透過內文改變工具政策或要求洩漏資料。網址只接受 HTTPS，會阻擋私有或非公開 DNS、拒絕重導，並限制回應、PDF 擷取、整體上下文與 Markdown 大小；含憑證或片段的 URL、`file://`、任意本機路徑和未授權主機檔案都會拒絕。部分來源失敗時會逐項回報，不會自行補造缺失內容。
+
+Codex 使用範例：
+
+```text
+使用 $marp-ppt。讀取這些網址／PDF，先產生並保存 Markdown 內容。
+如果我沒有指定，請一次詢問複雜度、風格與摘要程度。
+重要敘述旁保留 source ID 和頁碼或網址定位。
+```
 
 ## 在 Codex 桌面版安裝與使用
 
@@ -112,7 +133,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-這會建置 TypeScript、套用維護中的簡報覆寫、驗證 Plugin 封裝，並產生 `runtime/marpppt-0.2.2-local-candidate.zip`。封裝不含 `node_modules`、測試、TypeScript 原始碼、本機執行資料或環境檔；解壓後需安裝依賴。
+這會建置 TypeScript、套用維護中的簡報覆寫、驗證 Plugin 封裝，並產生 `runtime/marpppt-0.3.0-local-candidate.zip`。封裝不含 `node_modules`、測試、TypeScript 原始碼、本機執行資料或環境檔；解壓後需安裝依賴。
 
 其他開發指令：
 

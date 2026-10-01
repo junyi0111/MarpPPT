@@ -1,7 +1,7 @@
 {
   "name": "markdown-to-editable-pptx",
-  "version": "0.2.2",
-  "description": "MarpPPT Skill and MCP server for Marp source and editable PowerPoint from Markdown and images",
+  "version": "0.3.0",
+  "description": "MarpPPT Skill and MCP server for source-to-Markdown and editable PowerPoint decks from URLs, PDFs, Markdown, and images",
   "scripts": {
     "pretest": "npm run build",
     "test": "vitest run",
@@ -20,6 +20,7 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@mathjax/src": "^4.1.3",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "express": "^5.2.1",
     "fflate": "^0.8.3",

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { lstat, readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 import pptxgen from "pptxgenjs";
+import { UnsupportedMathError } from "../content/math-text.js";
 import {
   PresentationPlanSchema,
   validatePresentationPlan,
@@ -13,26 +14,29 @@ import { getCanvas, type Theme } from "../layout/geometry.js";
 import { findOverflow, type LayoutIssue } from "../layout/overflow.js";
 import { addLayoutObject, type LayoutObjectContext, type PptxApi, type PptxSlideApi, type ResolvedPptxAsset } from "./add-layout-object.js";
 import { repairPptxGenJsSlideMasterOverrides } from "./pptxgenjs-compat.js";
+import { renderMathImage } from "./render-math-image.js";
 import { PptxValidationError, validatePptx } from "./validate-pptx.js";
 
 export type { ResolvedPptxAsset } from "./add-layout-object.js";
 export { PptxValidationError } from "./validate-pptx.js";
 
-export type PptxRenderErrorCode = "PPTX_LAYOUT_INVALID" | "PLAN_INVALID" | "THEME_MISMATCH" | "PPTX_ASSET_MISSING" | "PPTX_ASSET_INVALID" | "PPTX_INVALID";
+export type PptxRenderErrorCode = "PPTX_LAYOUT_INVALID" | "PLAN_INVALID" | "THEME_MISMATCH" | "PPTX_ASSET_MISSING" | "PPTX_ASSET_INVALID" | "MATH_RENDER_FAILED" | "PPTX_INVALID";
 
 export class PptxRenderError extends Error {
   constructor(
     message: string,
     readonly code: PptxRenderErrorCode,
-    options: { assetId?: string; issues?: Array<LayoutIssue | ValidationIssue> } = {},
+    options: { assetId?: string; slideId?: string; issues?: Array<LayoutIssue | ValidationIssue> } = {},
   ) {
     super(message);
     this.name = "PptxRenderError";
     this.assetId = options.assetId;
+    this.slideId = options.slideId;
     this.issues = options.issues;
   }
 
   readonly assetId?: string;
+  readonly slideId?: string;
   readonly issues?: Array<LayoutIssue | ValidationIssue>;
 }
 
@@ -85,7 +89,15 @@ function planIssues(plan: unknown, assetIds: string[]): ValidationIssue[] {
 function layoutsForPlan(plan: PresentationPlan, theme: Theme): Array<{ objects: LayoutObject[]; issues: LayoutIssue[] }> {
   const canvas = getCanvas(theme);
   return plan.slides.map((slide) => {
-    const objects = buildSlideLayout(slide, theme);
+    let objects: LayoutObject[];
+    try {
+      objects = buildSlideLayout(slide, theme);
+    } catch (error) {
+      if (error instanceof UnsupportedMathError) {
+        throw new PptxRenderError(`Slide ${slide.id}: ${error.message}`, "MATH_RENDER_FAILED", { slideId: slide.id });
+      }
+      throw error;
+    }
     return { objects, issues: findOverflow(objects, canvas) };
   });
 }
@@ -197,6 +209,21 @@ export async function renderPptx(plan: PresentationPlan, assets: ResolvedPptxAss
   }
 
   const resolvedAssets = await validateResolvedAssets(checkedPlan, assets);
+  const mathImages = new Map<string, Awaited<ReturnType<typeof renderMathImage>>>();
+  for (const layout of layouts) {
+    for (const object of layout.objects) {
+      if (object.kind !== "math") continue;
+      try {
+        mathImages.set(object.id, await renderMathImage(object.latex, object.color));
+      } catch (error) {
+        throw new PptxRenderError(
+          `Equation ${object.id} could not be typeset: ${error instanceof Error ? error.message : String(error)}`,
+          "MATH_RENDER_FAILED",
+          { slideId: object.slideId },
+        );
+      }
+    }
+  }
   const selectedFont = fontFace(theme);
   const pptx = createPptx();
   const layoutName = "MARPPPT_13_333x7_5";
@@ -212,6 +239,7 @@ export async function renderPptx(plan: PresentationPlan, assets: ResolvedPptxAss
       pptx,
       slide,
       assets: resolvedAssets,
+      mathImages,
       theme,
     };
     slideLayout.objects.forEach((object) => addLayoutObject(object, context));

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanExpiredStagedJobs, stageAttachments, removeStagedJob, stagedJobDirectory } from "../../src/probe/local-attachment-stage.js";
+import { cleanExpiredStagedJobs, stageAttachments, stageResearchAttachments, removeStagedJob, stagedJobDirectory } from "../../src/probe/local-attachment-stage.js";
 import { createProbeResolver } from "../../src/probe/probe-resolver.js";
 
 const markdown = Buffer.from("# 簡報\nHello\n", "utf8");
@@ -20,9 +20,11 @@ async function inputs() {
   temporaryDirectories.push(directory);
   const sourcePath = join(directory, "source.md");
   const imagePath = join(directory, "photo.png");
+  const pdfPath = join(directory, "paper.pdf");
   await writeFile(sourcePath, markdown);
   await writeFile(imagePath, png);
-  return { directory, sourcePath, imagePath };
+  await writeFile(pdfPath, Buffer.from("%PDF-1.7\n1 0 obj\n<<>>\nendobj\n", "ascii"));
+  return { directory, sourcePath, imagePath, pdfPath };
 }
 
 afterEach(async () => {
@@ -44,6 +46,28 @@ describe("local attachment staging", () => {
     expect(JSON.stringify(staged)).not.toContain(imagePath);
     expect(createHash("sha256").update(await resolver.read(staged.sourceFile)).digest("hex"))
       .toBe(createHash("sha256").update(markdown).digest("hex"));
+  });
+
+  it("stages signed PDF research references without exposing the source path", async () => {
+    const { pdfPath } = await inputs();
+    const staged = await stageResearchAttachments({ pdfPaths: [pdfPath] }, { retentionMs: 5000 });
+    stagedJobs.push(staged.jobId);
+    const resolver = createProbeResolver();
+    expect(staged.pdfFiles).toHaveLength(1);
+    expect(staged.pdfFiles[0]).toMatchObject({ fileName: "paper.pdf", mimeType: "application/pdf" });
+    await expect(resolver.read(staged.pdfFiles[0]!)).resolves.toEqual(await readFile(pdfPath));
+    expect(JSON.stringify(staged)).not.toContain(pdfPath);
+  });
+
+  it("rejects PDF symlinks, non-PDF bytes, and oversized research files", async () => {
+    const { directory, pdfPath } = await inputs();
+    const linked = join(directory, "linked.pdf");
+    await symlink(pdfPath, linked);
+    await expect(stageResearchAttachments({ pdfPaths: [linked] }, { retentionMs: 5000 })).rejects.toThrow();
+    await writeFile(pdfPath, Buffer.from("not a PDF", "ascii"));
+    await expect(stageResearchAttachments({ pdfPaths: [pdfPath] }, { retentionMs: 5000 })).rejects.toThrow();
+    await writeFile(pdfPath, Buffer.concat([Buffer.from("%PDF-1.7\n", "ascii"), Buffer.alloc(32 * 1024 * 1024)]));
+    await expect(stageResearchAttachments({ pdfPaths: [pdfPath] }, { retentionMs: 5000 })).rejects.toThrow();
   });
 
   it("rejects forged, expired, path-bearing, and tampered references", async () => {

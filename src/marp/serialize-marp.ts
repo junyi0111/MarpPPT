@@ -1,5 +1,5 @@
-import { PresentationPlanSchema, type PresentationPlan, type SlidePlan } from "../contracts/presentation-plan.js";
-import { normalizeMathText } from "../content/math-text.js";
+import { PresentationPlanSchema, type PresentationPlan, type SlidePlan, type TextBlock } from "../contracts/presentation-plan.js";
+import { normalizeMathText, splitMathSegments } from "../content/math-text.js";
 import { parseMetricComparison } from "../content/metric-comparison.js";
 import type { Theme } from "../layout/geometry.js";
 
@@ -17,7 +17,10 @@ function assertSafeText(value: string, location: string, allowUrlText = false): 
 }
 
 function escapeMarkdown(value: string): string {
-  return normalizeMathText(value).replace(MARKDOWN_SPECIAL, "\\$1").replace(/\r?\n/g, "  \n");
+  normalizeMathText(value); // Reject unsupported or incomplete TeX before writing Marp.
+  return splitMathSegments(value).map((segment) => segment.kind === "math"
+    ? `${segment.display ? "$$" : "$"}${segment.value}${segment.display ? "$$" : "$"}`
+    : normalizeMathText(segment.value).replace(MARKDOWN_SPECIAL, "\\$1").replace(/\r?\n/g, "  \n")).join("");
 }
 
 function escapeHtml(value: string): string {
@@ -29,13 +32,46 @@ function escapeHtml(value: string): string {
     .replace(/'/gu, "&#39;");
 }
 
-function renderBlockText(value: string): string {
-  const metric = parseMetricComparison(value);
-  if (!metric) return escapeMarkdown(value);
+const STYLED_MARKDOWN_PUNCTUATION = new Set(Array.from("\\`*_{}[]()#+.!|~-$"));
+
+function escapeStyledText(value: string): string {
+  return Array.from(value.replace(/\r\n?/gu, "\n")).map((character) => {
+    if (character === "\n") return "<br>";
+    if (character === "&") return "&amp;";
+    if (character === "<") return "&lt;";
+    if (character === ">") return "&gt;";
+    if (character === '"') return "&quot;";
+    if (character === "'") return "&#39;";
+    if (STYLED_MARKDOWN_PUNCTUATION.has(character)) return `&#${character.codePointAt(0)};`;
+    return character;
+  }).join("");
+}
+
+function renderBlockText(block: TextBlock, slide: SlidePlan, theme: Theme, inList = false): string {
+  const mathSegments = splitMathSegments(block.text.trim());
+  if (!block.runs && mathSegments.length === 1 && mathSegments[0]?.kind === "math") {
+    const expression = mathSegments[0];
+    return expression.display && !inList ? `$$\n${expression.value}\n$$` : `$${expression.value}$`;
+  }
+  if (block.runs) {
+    const dark = slide.layout === "cover" || slide.layout === "section" || slide.layout === "closing";
+    return block.runs.map((run) => {
+      if (!run.bold && !run.color) return escapeMarkdown(run.text);
+      const classes = [
+        ...(run.bold ? ["marpppt-strong"] : []),
+        ...(run.color === "accent" ? [dark ? "marpppt-accent-dark" : "marpppt-accent"] : []),
+      ];
+      return `<span class="${classes.join(" ")}">${escapeStyledText(normalizeMathText(run.text))}</span>`;
+    }).join("");
+  }
+  const metric = splitMathSegments(block.text).some((segment) => segment.kind === "math")
+    ? undefined
+    : parseMetricComparison(block.text);
+  if (!metric) return escapeMarkdown(block.text);
   const context = escapeHtml(metric.context);
   const before = escapeHtml(metric.before);
   const after = escapeHtml(metric.after);
-  return `<span style="font-family:inherit;font-size:.8em;font-weight:700;color:#738299">${context}</span> <span style="font-family:inherit">${before}</span> <span style="font-family:inherit;font-weight:700;color:#2F6FED">→</span> <span style="font-family:inherit;font-size:1.5em;font-weight:700;color:#2F6FED">${after}</span>`;
+  return `<span class="marpppt-metric-context">${context}</span> <span>${before}</span> <span class="marpppt-metric-arrow">→</span> <span class="marpppt-metric-after">${after}</span>`;
 }
 
 function escapeSourceReference(value: string): string {
@@ -125,34 +161,34 @@ function renderDiagram(slide: Extract<SlidePlan, { layout: "diagram" }>): string
   return ["節點：", ...nodes, "", "關係：", ...edges];
 }
 
-function renderSlide(slide: SlidePlan, plan: PresentationPlan): string {
+function renderSlide(slide: SlidePlan, plan: PresentationPlan, theme: Theme): string {
   const lines = [`# ${escapeMarkdown(slide.title)}`];
   if (slide.subtitle) lines.push("", escapeMarkdown(slide.subtitle));
 
   switch (slide.layout) {
     case "bullets":
-      lines.push("", ...slide.blocks.map((block) => `- ${renderBlockText(block.text)}`));
+      lines.push("", ...slide.blocks.map((block) => `- ${renderBlockText(block, slide, theme, true)}`));
       break;
     case "comparison":
       lines.push("", `### ${escapeMarkdown(slide.columns[0].title)}`);
-      lines.push(...slide.columns[0].blocks.map((block) => `- ${renderBlockText(block.text)}`));
+      lines.push(...slide.columns[0].blocks.map((block) => `- ${renderBlockText(block, slide, theme, true)}`));
       lines.push("", `### ${escapeMarkdown(slide.columns[1].title)}`);
-      lines.push(...slide.columns[1].blocks.map((block) => `- ${renderBlockText(block.text)}`));
+      lines.push(...slide.columns[1].blocks.map((block) => `- ${renderBlockText(block, slide, theme, true)}`));
       break;
     case "table":
       lines.push("", ...renderTable(slide));
-      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block.text)));
+      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block, slide, theme)));
       break;
     case "chart":
       lines.push("", ...renderChart(slide));
-      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block.text)));
+      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block, slide, theme)));
       break;
     case "diagram":
       lines.push("", ...renderDiagram(slide));
-      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block.text)));
+      if (slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block, slide, theme)));
       break;
     default:
-      if ("blocks" in slide && slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block.text)));
+      if ("blocks" in slide && slide.blocks?.length) lines.push("", ...slide.blocks.map((block) => renderBlockText(block, slide, theme)));
   }
 
   const images = slideImages(slide, plan);
@@ -167,6 +203,9 @@ export function serializeMarp(plan: PresentationPlan, theme: Theme): string {
     throw new Error(`THEME_MISMATCH: plan requests ${parsed.themeId}, but ${theme.id} was provided.`);
   }
   if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test(theme.id)) throw new Error("INVALID_THEME_ID: theme IDs must be safe Marp tokens.");
+  for (const [name, color] of Object.entries({ accent: theme.colors.accent, accentCyan: theme.colors.accentCyan ?? theme.colors.accent, muted: theme.colors.muted })) {
+    if (!/^#[0-9A-Fa-f]{6}$/u.test(color)) throw new Error(`INVALID_THEME_COLOR: ${name} must be a six-digit hex color.`);
+  }
   for (const text of allPlanText(parsed)) assertSafeText(text.value, text.location, text.allowUrlText);
 
   const frontMatter = [
@@ -174,12 +213,19 @@ export function serializeMarp(plan: PresentationPlan, theme: Theme): string {
     "marp: true",
     "size: 16:9",
     "theme: default",
+    "math: mathjax",
     `title: ${JSON.stringify(parsed.title)}`,
     "style: |",
     "  section {",
     `    font-family: ${JSON.stringify(theme.typography.fontFace)};`,
     "  }",
+    "  section .marpppt-strong { font-weight: 700; }",
+    `  section .marpppt-accent { color: ${theme.colors.accent}; }`,
+    `  section .marpppt-accent-dark { color: ${theme.colors.accentCyan ?? theme.colors.accent}; }`,
+    `  section .marpppt-metric-context { font-size: .8em; font-weight: 700; color: ${theme.colors.muted}; }`,
+    `  section .marpppt-metric-arrow { font-weight: 700; color: ${theme.colors.accent}; }`,
+    `  section .marpppt-metric-after { font-size: 1.5em; font-weight: 700; color: ${theme.colors.accent}; }`,
     "---",
   ].join("\n");
-  return `${frontMatter}\n${parsed.slides.map((slide, index) => `${index === 0 ? "" : "---\n"}${renderSlide(slide, parsed)}`).join("\n")}`;
+  return `${frontMatter}\n${parsed.slides.map((slide, index) => `${index === 0 ? "" : "---\n"}${renderSlide(slide, parsed, theme)}`).join("\n")}`;
 }

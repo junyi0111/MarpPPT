@@ -1,6 +1,7 @@
 import { isAbsolute, resolve } from "node:path";
 
-const MAX_REQUEST_BYTES = 2 * 1024 * 1024;
+const DEFAULT_REQUEST_BYTES = 4 * 1024 * 1024;
+const MAX_REQUEST_BYTES = 4 * 1024 * 1024;
 const MAX_ACTIVE_REQUESTS = 128;
 const MAX_ACTIVE_JOBS = 32;
 
@@ -49,7 +50,7 @@ export function parseHttpRuntimeConfig(env: Environment = process.env): HttpRunt
   }
   const outputRoot = resolve(configuredRoot);
   const publicBaseUrl = httpsOrigin(required(env, "MARPPPT_PUBLIC_BASE_URL"));
-  const requestBodyLimitBytes = boundedInteger(env.MARPPPT_MAX_REQUEST_BYTES, MAX_REQUEST_BYTES, "MARPPPT_MAX_REQUEST_BYTES", 1024, MAX_REQUEST_BYTES);
+  const requestBodyLimitBytes = boundedInteger(env.MARPPPT_MAX_REQUEST_BYTES, DEFAULT_REQUEST_BYTES, "MARPPPT_MAX_REQUEST_BYTES", 1024, MAX_REQUEST_BYTES);
   const maxActiveRequests = boundedInteger(env.MARPPPT_MAX_ACTIVE_REQUESTS, 8, "MARPPPT_MAX_ACTIVE_REQUESTS", 1, MAX_ACTIVE_REQUESTS);
   const maxActiveJobs = boundedInteger(env.MARPPPT_MAX_ACTIVE_JOBS, 2, "MARPPPT_MAX_ACTIVE_JOBS", 1, MAX_ACTIVE_JOBS);
   if (maxActiveJobs > maxActiveRequests) throw new Error("MARPPPT_MAX_ACTIVE_JOBS cannot exceed MARPPPT_MAX_ACTIVE_REQUESTS.");

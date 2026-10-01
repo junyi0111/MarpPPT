@@ -22,6 +22,11 @@ describe("hosted HTTP configuration", () => {
     });
   });
 
+  it("allows enough JSON envelope for a maximum-size Markdown draft", () => {
+    expect(parseHttpRuntimeConfig({ ...validEnvironment, MARPPPT_MAX_REQUEST_BYTES: String(4 * 1024 * 1024) }).requestBodyLimitBytes)
+      .toBe(4 * 1024 * 1024);
+  });
+
   it.each([
     ["PORT", "0"],
     ["PORT", "65536"],

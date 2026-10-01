@@ -9,7 +9,7 @@
   <a href="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml"><img alt="Build and package validation" src="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2563EB.svg"></a>
   <img alt="Node.js 22 or later" src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white">
-  <img alt="Package version 0.2.2" src="https://img.shields.io/badge/package-0.2.2-6D5EF7">
+  <img alt="Package version 0.3.0" src="https://img.shields.io/badge/package-0.3.0-6D5EF7">
   <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="Latest commit" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=last%20update"></a>
 </p>
 
@@ -37,9 +37,30 @@ Its quality goals are **clear information, reliable layout, repeatable productio
 - **Consistent layout:** includes the Tech Editorial design system, bilingual font settings, editable table rules, and spacing guidance.
 - **Selectable font themes:** defaults to Noto Sans TC and also supports Noto Serif TC, Source Han Serif TC, and IBM Plex Sans TC. The local MCP can install a missing family from an official source into the user's font directory, then rerun preflight; see [font themes](docs/operations/fonts.md).
 - **Images handled carefully:** keeps each image's aspect ratio and uses `contain` fit; text boxes are vertically centered.
+- **Math and emphasis:** preserves LaTeX in Marp, typesets standalone equations locally for PPTX, and keeps selected bold or accent-colored phrases editable as PowerPoint text runs.
 - **A checked package:** validates every `[Content_Types].xml` Override and internal relationship target in the PPTX archive.
 - **Useful deliverables:** returns editable `.pptx` and `.marp.md` files, plus an image bundle when needed.
 - **Source checks:** includes a local PDF text extraction helper for optional source and page-number verification.
+
+## Equations and highlighted text
+
+Put a display equation by itself in a slide text block, for example `\[\frac{QK^\top}{\sqrt{d_k}}\]`. Marp keeps the LaTeX source. The PPTX typesets it locally with MathJax as a transparent image, so you can select, move, resize, or replace the complete equation; its original LaTeX is retained in the image's alternative text. **The equation itself is not a native PowerPoint equation for character-by-character editing.** Short inline formulas use editable Unicode or linear mathematical text. Unsupported syntax returns an explicit error instead of silently discarding commands.
+
+For a key phrase, the slide plan can split one editable text box into `runs` with `bold: true` and/or the controlled `color: "accent"` theme token. The concatenated run text must match the block's plain `text` exactly. This keeps normal prose editable while emphasizing one or two facts; see the [layout contract](skills/marp-ppt/references/layout-contract.md) for an example.
+
+## From URLs or PDFs to a Markdown brief
+
+You can start with one to eight public HTTPS URLs or staged PDF attachments when you do not have a Markdown file yet. MarpPPT asks for the missing preferences in one compact choice: **complexity** (`brief`, `standard`, `detailed`), **style** (`tech-editorial`, `academic`, `executive`, `tutorial`), and **summary** (`light`, `moderate`, `deep`). It then prepares bounded source text, drafts a traceable Markdown brief, and saves it as a private Markdown artifact before any optional PPTX rendering.
+
+The local MCP exposes `prepare_markdown_sources` and `save_markdown_draft` for this workflow. Sources are treated as untrusted reference material: their text cannot change tool policy or request secrets. URL acquisition accepts HTTPS only, blocks private or non-public DNS targets, does not follow redirects, and caps response, PDF extraction, context, and draft sizes. Credentials, fragments, arbitrary local paths, `file://` URLs, and unauthorised host files are rejected. A partial result reports each failed source instead of inventing missing facts.
+
+Example request in Codex:
+
+```text
+Use $marp-ppt. Read these URLs/PDFs and first produce a saved Markdown brief.
+Ask once for complexity, style, and summary if I did not specify them.
+Keep source IDs and page or URL references beside important claims.
+```
 
 ## Install in Codex desktop
 
@@ -112,7 +133,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-This builds the TypeScript, applies the maintained presentation overrides, validates the plugin package, and writes `runtime/marpppt-0.2.2-local-candidate.zip`. The archive excludes `node_modules`, tests, TypeScript source, local runtime data, and environment files. Install dependencies after extracting it.
+This builds the TypeScript, applies the maintained presentation overrides, validates the plugin package, and writes `runtime/marpppt-0.3.0-local-candidate.zip`. The archive excludes `node_modules`, tests, TypeScript source, local runtime data, and environment files. Install dependencies after extracting it.
 
 Other development commands:
 

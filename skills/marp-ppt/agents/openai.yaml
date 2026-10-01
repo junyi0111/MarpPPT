@@ -1,6 +1,6 @@
 interface:
   display_name: "MarpPPT"
-  short_description: "將 Markdown 與對話圖片製成可編輯 PowerPoint 簡報"
-  default_prompt: "Use $marp-ppt to turn my attached Markdown and images into an editable PowerPoint and Marp source."
+  short_description: "將網址、PDF、Markdown 與圖片製成可編輯簡報"
+  default_prompt: "Use $marp-ppt to prepare a sourced Markdown brief from my URLs or PDFs, or turn my Markdown and images into an editable PowerPoint and Marp source."
 policy:
   allow_implicit_invocation: true

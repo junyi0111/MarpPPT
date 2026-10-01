@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeMathText, splitMathSegments } from "../content/math-text.js";
 
 const MAX_SLIDES = 60;
 const MAX_IMAGES = 30;
@@ -9,10 +10,35 @@ const nonEmpty = z.string().trim().min(1);
 const digestSchema = z.string().regex(SHA256_PATTERN, "Expected a 64-character SHA-256 digest");
 const idSchema = nonEmpty.max(120, "IDs must be at most 120 characters");
 const slideTitleSchema = nonEmpty.max(160, "Slide titles must be at most 160 characters");
+const textRunSchema = z.object({
+  text: z.string().min(1).max(1000),
+  bold: z.boolean().optional(),
+  color: z.literal("accent").optional(),
+}).strict();
 const textBlockSchema = z.object({
   id: idSchema,
   text: nonEmpty,
-}).strict();
+  runs: z.array(textRunSchema).min(1).max(24).optional(),
+}).strict().superRefine((block, ctx) => {
+  if (block.runs && block.runs.map((run) => run.text).join("") !== block.text) {
+    ctx.addIssue({ code: "custom", path: ["runs"], message: "Styled runs must reproduce the block text exactly." });
+  }
+  if (!block.runs) return;
+  try {
+    const wholeText = normalizeMathText(block.text);
+    const runText = block.runs.map((run) => normalizeMathText(run.text)).join("");
+    if (wholeText !== runText) {
+      ctx.addIssue({ code: "custom", path: ["runs"], message: "A LaTeX expression cannot cross text-run boundaries." });
+    }
+    block.runs.forEach((run, index) => {
+      if ((run.bold || run.color) && splitMathSegments(run.text).some((segment) => segment.kind === "math")) {
+        ctx.addIssue({ code: "custom", path: ["runs", index], message: "Keep a LaTeX expression in an unstyled run or its own block." });
+      }
+    });
+  } catch {
+    ctx.addIssue({ code: "custom", path: ["runs"], message: "Styled runs require complete, supported LaTeX expressions." });
+  }
+});
 
 const DIAGRAM_PLACEHOLDER_PATTERN = /^(?:\.\.\.|…|tbd|todo|待補|placeholder)$/iu;
 
@@ -278,6 +304,7 @@ export type PresentationPlan = z.infer<typeof PresentationPlanSchema>;
 export type SlidePlan = PresentationPlan["slides"][number];
 export type LayoutId = SlidePlan["layout"];
 export type TextBlock = z.infer<typeof textBlockSchema>;
+export type TextRun = z.infer<typeof textRunSchema>;
 export type TableData = z.infer<typeof tableDataSchema>;
 export type ChartData = z.infer<typeof chartDataSchema>;
 export type DiagramData = z.infer<typeof diagramDataSchema>;

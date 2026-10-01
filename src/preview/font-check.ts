@@ -90,7 +90,6 @@ export async function countTofuGlyphs(pngPaths: string[]): Promise<number> {
       const foreground = backgroundIsDark ? value > 190 : value < 190;
       darkPixels[y * width + x] = alpha > 20 && foreground ? 1 : 0;
     }
-    const dark = (x: number, y: number): boolean => darkPixels[y * width + x] === 1;
     const visited = new Uint8Array(width * height);
     const stack: number[] = [];
     for (let start = 0; start < darkPixels.length; start++) {
@@ -124,7 +123,31 @@ export async function countTofuGlyphs(pngPaths: string[]): Promise<number> {
       const aspect = boxW / boxH;
       // A tofu square is a small, sparse, nearly rectangular connected ring.
       if (boxW >= 8 && boxW <= 24 && boxH >= 10 && boxH <= 26 && aspect >= 0.45 && aspect <= 1.6 && density >= 0.08 && density <= 0.42) {
-        count += 1;
+        // Size and density alone also match many valid CJK strokes. Require
+        // a continuous outline on all four sides, allowing antialiasing gaps.
+        const edgeDepth = 2;
+        let left = 0; let right = 0; let top = 0; let bottom = 0;
+        for (let y = minY; y <= maxY; y++) {
+          if (darkPixels[y * width + minX] || darkPixels[y * width + minX + edgeDepth - 1]) left++;
+          if (darkPixels[y * width + maxX] || darkPixels[y * width + maxX - edgeDepth + 1]) right++;
+        }
+        for (let x = minX; x <= maxX; x++) {
+          if (darkPixels[minY * width + x] || darkPixels[(minY + edgeDepth - 1) * width + x]) top++;
+          if (darkPixels[maxY * width + x] || darkPixels[(maxY - edgeDepth + 1) * width + x]) bottom++;
+        }
+        if (Math.min(left / boxH, right / boxH, top / boxW, bottom / boxW) < 0.75) continue;
+
+        // Inspect the full mask, not just this connected component: 回 has
+        // an outer rectangular ring plus a disconnected inner set of strokes.
+        const inset = Math.ceil(Math.min(boxW, boxH) * 0.2);
+        let interiorPixels = 0;
+        for (let y = minY + inset; y <= maxY - inset; y++) {
+          for (let x = minX + inset; x <= maxX - inset; x++) {
+            interiorPixels += darkPixels[y * width + x] ?? 0;
+          }
+        }
+        const interiorArea = (boxW - inset * 2) * (boxH - inset * 2);
+        if (interiorPixels / interiorArea <= 0.02) count += 1;
       }
     }
   }

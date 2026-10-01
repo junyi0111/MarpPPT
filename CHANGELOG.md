@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0] - 2026-10-01
+
+### Added
+
+- Add `prepare_markdown_sources` for bounded extraction from public HTTPS URLs and staged PDF attachments.
+- Add `save_markdown_draft` for publishing a model-generated, source-bound Markdown artifact with a SHA-256 digest.
+- Add one-question drafting preferences for complexity, style, summary depth, language, audience, and requested slide count.
+- Add PDF research staging with signed, expiring local references and a no-shell Poppler extraction boundary.
+- Document source trust boundaries, URL/PDF limits, partial-source failure handling, and the Codex invocation example.
+- Preserve explicit LaTeX in Marp and render standalone equations locally as selectable, aspect-preserving PowerPoint images with source TeX in alternative text.
+- Add editable PowerPoint text runs for controlled bold and theme accent emphasis, with equivalent Marp styling.
+
+### Fixed
+
+- Report unsupported equations explicitly instead of silently losing mathematical notation.
+- Synchronize preview and HTTP worker timeout fixtures with actual child-process and cleanup readiness.
+- Require a continuous rectangular outline and an empty center before flagging raster replacement glyphs, avoiding false failures on correctly rendered CJK text in Linux previews.
+
+### Security
+
+- Reject credentialed or fragment-bearing authorized file URLs and keep the hosted JSON envelope large enough for a maximum-size Markdown draft without removing request limits.
+
 ## [0.2.2] - 2026-09-27
 
 ### Added

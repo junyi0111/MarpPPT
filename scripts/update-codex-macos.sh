@@ -105,8 +105,8 @@ await client.connect(transport);
 try {
   const result = await client.listTools();
   const names = new Set(result.tools.map((tool) => tool.name));
-  if (!names.has('render_presentation') || !names.has('ensure_font')) {
-    throw new Error('The updated MCP does not expose render_presentation and ensure_font.');
+  if (!names.has('render_presentation') || !names.has('ensure_font') || !names.has('prepare_markdown_sources') || !names.has('save_markdown_draft')) {
+    throw new Error('The updated MCP does not expose render_presentation, ensure_font, prepare_markdown_sources, and save_markdown_draft.');
   }
 } finally {
   await client.close();

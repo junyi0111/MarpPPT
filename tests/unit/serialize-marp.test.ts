@@ -8,7 +8,7 @@ describe("serializeMarp", () => {
   it("writes valid 16:9 Marp front matter and one slide boundary per planned slide", () => {
     const plan = makePresentationPlanFixture();
     const source = serializeMarp(plan, defaultTheme);
-    expect(source).toMatch(/^---\nmarp: true\nsize: 16:9\ntheme: default\ntitle: /);
+    expect(source).toMatch(/^---\nmarp: true\nsize: 16:9\ntheme: default\nmath: mathjax\ntitle: /);
     expect(source.match(/^---\s*$/gm)).toHaveLength(plan.slides.length + 1);
     expect(source).toContain('title: "KV Cache 壓縮"');
   });
@@ -105,7 +105,7 @@ describe("serializeMarp", () => {
     expect(source).toContain("literal \\*emphasis\\* and \\[brackets\\]");
   });
 
-  it("downgrades LaTeX formulas before serializing Marp text", () => {
+  it("preserves supported LaTeX formulas for Marp math rendering", () => {
     const plan = makePresentationPlanFixture();
     plan.slides = [{
       id: "formula", title: "注意力公式", layout: "takeaway",
@@ -115,9 +115,28 @@ describe("serializeMarp", () => {
     plan.imageAssetIds = [];
     plan.assetManifest = [];
     const source = serializeMarp(plan, defaultTheme);
-    expect(source).toContain("Attention\\(Q,K,V");
-    expect(source).toContain("QKᵀ");
-    expect(source).not.toMatch(/\\\[|\\\]|\\(?:mathrm|frac|sqrt|top)/u);
+    expect(source).toContain(String.raw`$$
+\mathrm{Attention}(Q,K,V)=\mathrm{softmax}`);
+    expect(source).toContain(String.raw`\frac{QK^\top}{\sqrt{d_k}}`);
+    expect(source).not.toContain(String.raw`\[`);
+  });
+
+  it("keeps a display equation within bullet and comparison list syntax", () => {
+    const plan = makePresentationPlanFixture();
+    plan.slides = [{
+      id: "formula-list", title: "公式列表", layout: "bullets",
+      blocks: [
+        { id: "one", text: String.raw`\[\frac{a}{b}\]` },
+        { id: "two", text: "先定義分子" },
+        { id: "three", text: "再檢查分母" },
+      ],
+      imageIds: [], sourceRefs: ["## 定義"],
+    }];
+    plan.imageAssetIds = [];
+    plan.assetManifest = [];
+    const source = serializeMarp(plan, defaultTheme);
+    expect(source).toContain(String.raw`- $\frac{a}{b}$`);
+    expect(source).not.toContain(String.raw`- $$`);
   });
 
   it("serializes metric comparisons with a larger after-value emphasis", () => {
@@ -131,7 +150,8 @@ describe("serializeMarp", () => {
     plan.assetManifest = [];
     const source = serializeMarp(plan, defaultTheme);
     expect(source).toContain("顯著提升");
-    expect(source).toContain("font-size:1.5em");
+    expect(source).toContain('class="marpppt-metric-after"');
+    expect(source).toContain(".marpppt-metric-after { font-size: 1.5em");
     expect(source).toContain("32分");
     expect(source).toContain("62分");
   });

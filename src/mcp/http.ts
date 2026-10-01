@@ -16,8 +16,8 @@ import { runHttpRenderWorker, type HttpRenderWorkerOptions } from "./http-render
 import type { RenderFinalizedEvent } from "./tools/render-presentation.js";
 import { createFailClosedRenderDependencies, createMcpServer, type PresentationServerDependencies } from "./server.js";
 
-const VERSION = "0.2.2";
-const DEFAULT_REQUEST_BYTES = 2 * 1024 * 1024;
+const VERSION = "0.3.0";
+const DEFAULT_REQUEST_BYTES = 4 * 1024 * 1024;
 const DEFAULT_ACTIVE_REQUESTS = 8;
 const DEFAULT_ACTIVE_JOBS = 2;
 
@@ -156,7 +156,7 @@ export function createApp(config: HttpAppConfig): Express {
   const maxActiveRequests = config.maxActiveRequests ?? DEFAULT_ACTIVE_REQUESTS;
   const maxActiveJobs = config.maxActiveJobs ?? DEFAULT_ACTIVE_JOBS;
   if (!Number.isSafeInteger(requestBodyLimitBytes) || requestBodyLimitBytes < 1024 || requestBodyLimitBytes > DEFAULT_REQUEST_BYTES) {
-    throw new RangeError("HTTP JSON request size must be between 1 KiB and 2 MiB.");
+    throw new RangeError("HTTP JSON request size must be between 1 KiB and 4 MiB.");
   }
   if (config.renderWorker && !config.downloadStore) throw new Error("The isolated HTTP render worker requires a parent HTTP artifact store.");
   const admission = createHttpAdmission({ maxActiveRequests, maxActiveJobs });

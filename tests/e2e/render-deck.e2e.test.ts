@@ -71,7 +71,7 @@ describe("eight-slide end-to-end acceptance", () => {
   it("renders a manager deck with native objects, all three images, matching Marp, and eight preview pages", async () => {
     const { result, plan, request } = await runFixture();
     expect(request).toEqual({ audience: "managers", targetSlideCount: 8, summaryStrength: "moderate" });
-    expect(result.status).toBe("completed");
+    expect(result.status, JSON.stringify(result)).toBe("completed");
     if (result.status !== "completed") return;
     expect(result.slideCount).toBe(8);
     expect(result.imageUsage).toEqual([

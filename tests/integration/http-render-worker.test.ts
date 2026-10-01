@@ -125,7 +125,7 @@ describe("HTTP render worker isolation", () => {
       cleanupTempWorkspaces: async () => { cleanupStarted(); await cleanupGate; },
       onFinalized: (event) => events.push(event),
     });
-    await cleanupStarted;
+    await started;
     await new Promise((resolve) => setTimeout(resolve, 300));
     allowCleanup();
     const output = await operation;

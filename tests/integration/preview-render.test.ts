@@ -98,14 +98,14 @@ describe("preview rendering", () => {
     const hangingRendererPath = join(fixture.tempDirectory, "hanging-renderer.mjs");
     await writeFile(hangingRendererPath, [
       'import { spawn } from "node:child_process";',
-      'import { writeFileSync } from "node:fs";',
-      `const child = spawn(process.execPath, ["-e", ${JSON.stringify(`setInterval(() => require("node:fs").writeFileSync(${JSON.stringify(heartbeatPath)}, String(Date.now())), 20)`)}], { stdio: "ignore" });`,
-      `writeFileSync(${JSON.stringify(markerPath)}, String(child.pid));`,
+      `spawn(process.execPath, ["-e", ${JSON.stringify(`const fs = require("node:fs"); fs.writeFileSync(${JSON.stringify(markerPath)}, String(process.pid)); fs.writeFileSync(${JSON.stringify(heartbeatPath)}, String(Date.now())); setInterval(() => fs.writeFileSync(${JSON.stringify(heartbeatPath)}, String(Date.now())), 20);`)}], { stdio: "ignore" });`,
       'setInterval(() => {}, 10000);',
     ].join("\n"), { mode: 0o600 });
 
     const report = await renderPreview(fixture.twoSlidePptxPath, fixture.tempDirectory, {
-      timeoutMs: 150,
+      // Allow both Node processes to start so the deadline exercises cleanup
+      // of a running descendant, rather than racing its first heartbeat.
+      timeoutMs: 1_500,
       commands: { soffice: { file: process.execPath, args: [hangingRendererPath] } },
     });
 

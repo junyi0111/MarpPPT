@@ -26,5 +26,15 @@ jobs:
             poppler-utils
       - run: npm ci
       - run: npm test
+        env:
+          MARPPPT_E2E_PREVIEW_DEBUG: ${{ runner.temp }}/marpppt-preview-debug
+      - name: Upload synthetic preview diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-preview-diagnostics
+          path: ${{ runner.temp }}/marpppt-preview-debug
+          if-no-files-found: ignore
+          retention-days: 3
       - run: npm run package:validate
       - run: npm audit --omit=dev

@@ -1,13 +1,14 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { strFromU8, unzipSync } from "fflate";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PresentationPlan } from "../../src/contracts/presentation-plan.js";
 import { createLocalArtifactStore } from "../../src/artifacts/local-artifact-store.js";
 import { renderPresentation, type RenderPresentationInput, type RenderPresentationDependencies } from "../../src/mcp/tools/render-presentation.js";
 import { createContactSheet } from "../../src/preview/contact-sheet.js";
+import * as fontCheck from "../../src/preview/font-check.js";
 import { loadDefaultTheme } from "../helpers/layout-fixtures.js";
 
 const fixtureRoot = fileURLToPath(new URL("../fixtures/", import.meta.url));
@@ -64,11 +65,22 @@ async function runFixture(options: {
 }
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(createdRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
 describe("eight-slide end-to-end acceptance", () => {
   it("renders a manager deck with native objects, all three images, matching Marp, and eight preview pages", async () => {
+    // Preserve only this synthetic fixture when CI needs raster diagnostics.
+    const debugRoot = process.env.MARPPPT_E2E_PREVIEW_DEBUG;
+    if (debugRoot) {
+      await mkdir(debugRoot, { recursive: true });
+      const countTofuGlyphs = fontCheck.countTofuGlyphs;
+      vi.spyOn(fontCheck, "countTofuGlyphs").mockImplementation(async (paths) => {
+        await Promise.all(paths.map((path, index) => copyFile(path, join(debugRoot, `page-${index + 1}.png`))));
+        return countTofuGlyphs(paths);
+      });
+    }
     const { result, plan, request } = await runFixture();
     expect(request).toEqual({ audience: "managers", targetSlideCount: 8, summaryStrength: "moderate" });
     expect(result.status, JSON.stringify(result)).toBe("completed");

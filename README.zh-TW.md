@@ -9,7 +9,7 @@
   <a href="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml"><img alt="建置與封裝驗證" src="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT 授權" src="https://img.shields.io/badge/license-MIT-2563EB.svg"></a>
   <img alt="Node.js 22 以上" src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white">
-  <img alt="套件版本 0.3.0" src="https://img.shields.io/badge/package-0.3.0-6D5EF7">
+  <img alt="套件版本 0.3.1" src="https://img.shields.io/badge/package-0.3.1-6D5EF7">
   <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="最近更新" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=last%20update"></a>
 </p>
 
@@ -83,6 +83,8 @@ curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/inst
 
 看到 `Installed.` 後，**完整結束並重新開啟 Codex**，再開新對話，附上 `.md` 與需要使用的圖片，輸入 `$marp-ppt` 和簡報需求。安裝後可在桌面 App 的 Plugins 中確認 **MarpPPT** 已啟用。MCP 產物預設儲存在 `~/.marpppt/artifacts/`；如需更改位置，可在啟動 Codex 前設定絕對路徑環境變數 `PPTX_OUTPUT_ROOT`。可在安裝前設定絕對路徑的 `MARPPPT_INSTALL_ROOT`，將依賴與 Plugin 來源放在外接硬碟；**使用時必須保持硬碟連接**。
 
+產生檔固定標為**未驗證草稿**：必須由 Microsoft PowerPoint 首次開啟原檔無修復提示，另存後關閉重開也無提示，才可標為完成。預覽成功不能取代這項檢查。渲染器會在交付前攔截已知表格、XML 與圖表工作簿錯誤；這不等於完整 Office 結構描述或各平台原生驗證。
+
 ### 更新已安裝的版本
 
 在同一台 Mac 關閉正在使用 MarpPPT 的對話後，貼入：
@@ -133,7 +135,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-這會建置 TypeScript、套用維護中的簡報覆寫、驗證 Plugin 封裝，並產生 `runtime/marpppt-0.3.0-local-candidate.zip`。封裝不含 `node_modules`、測試、TypeScript 原始碼、本機執行資料或環境檔；解壓後需安裝依賴。
+這會建置 TypeScript、驗證實際編譯後的表格與主題、驗證 Plugin 封裝，並產生 `runtime/marpppt-0.3.1-local-candidate.zip`。封裝不含 `node_modules`、測試、TypeScript 原始碼、本機執行資料或環境檔；解壓後需安裝依賴。
 
 其他開發指令：
 

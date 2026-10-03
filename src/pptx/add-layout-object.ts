@@ -24,8 +24,12 @@ export interface PptxSlideApi {
   addText(text: string | Array<{ text: string; options?: Record<string, unknown> }>, options: Record<string, unknown>): unknown;
   addShape(shapeName: string, options: Record<string, unknown>): unknown;
   addImage(options: Record<string, unknown>): unknown;
-  addTable(rows: unknown[], options: Record<string, unknown>): unknown;
+  addTable(rows: Array<Array<{ text: string; options: TableOptions }>>, options: TableOptions): unknown;
   addChart(chartType: string, data: unknown[], options: Record<string, unknown>): unknown;
+}
+
+interface TableOptions extends Record<string, unknown> {
+  valign: "top" | "middle" | "bottom";
 }
 
 export interface LayoutObjectContext {
@@ -163,7 +167,7 @@ function addTable(object: TableLayoutObject, context: LayoutObjectContext): void
   const numericColumns = new Set(object.numericColumns ?? []);
   const headerMargin = object.headerCellMargin ?? [0.079, 0.197, 0.079, 0.197];
   const bodyMargin = object.bodyCellMargin ?? [0.098, 0.197, 0.098, 0.197];
-  const rows = [object.columns, ...object.rows].map((row, rowIndex) => row.map((text, columnIndex) => ({
+  const rows: Array<Array<{ text: string; options: TableOptions }>> = [object.columns, ...object.rows].map((row, rowIndex) => row.map((text, columnIndex) => ({
     text,
     options: {
       fontFace: fontFaceForTheme(context.theme),
@@ -173,7 +177,7 @@ function addTable(object: TableLayoutObject, context: LayoutObjectContext): void
       ...(rowIndex === 0 ? { fill: colorStyle(object.headerFill) } : {}),
       align: rowIndex === 0 ? "center" : numericColumns.has(columnIndex) ? "right" : "left",
       margin: rowIndex === 0 ? headerMargin : bodyMargin,
-      valign: "mid",
+      valign: "middle",
       lineSpacingMultiple: object.lineHeight ?? 1.2,
     },
   })));
@@ -189,7 +193,7 @@ function addTable(object: TableLayoutObject, context: LayoutObjectContext): void
     color: colorStyle(object.color).color,
     border: { type: "solid", color: borderColor, pt: 0.7 },
     margin: bodyMargin,
-    valign: "mid",
+    valign: "middle",
     autoPage: false,
     ...objectName(object.id),
   });

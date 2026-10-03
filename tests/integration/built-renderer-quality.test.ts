@@ -47,7 +47,7 @@ describe("published renderer design preferences", () => {
     };
     addLayoutObject(object, value);
     const rows = calls.find((call) => call.method === "addTable")?.args[0] as Array<Array<{ options: Record<string, unknown> }>>;
-    expect(rows[0]![0]!.options).toMatchObject({ align: "center", valign: "mid", margin: [0.079, 0.197, 0.079, 0.197] });
+    expect(rows[0]![0]!.options).toMatchObject({ align: "center", valign: "middle", margin: [0.079, 0.197, 0.079, 0.197] });
     expect(rows[1]![0]!.options).toMatchObject({ align: "left", bold: true, margin: [0.098, 0.197, 0.098, 0.197] });
     expect(rows[1]![1]!.options).toMatchObject({ align: "right", bold: true });
   });

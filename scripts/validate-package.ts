@@ -114,6 +114,7 @@ export async function validatePackage(root = resolve(import.meta.dirname, ".."),
   }
   await inside(root, "./dist/mcp/stdio.js", "built MCP entrypoint", "file");
   await inside(root, "./dist/mcp/http-render-worker-child.js", "built isolated HTTP render worker entrypoint", "file");
+  await inside(root, "./dist/pptx/office-xml.js", "built strict Office XML validation", "file");
   await inside(root, "./dist/pptx/pptxgenjs-compat.js", "built PPTX compatibility helper", "file");
   await inside(root, "./dist/attachments/local-attachment-stage.js", "built attachment staging CLI", "file");
   await inside(root, "./dist/attachments/staged-resolver.js", "built staged attachment resolver", "file");

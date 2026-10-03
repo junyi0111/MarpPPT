@@ -12,7 +12,8 @@ import { buildSlideLayout } from "../../src/layout/build-slide.js";
 import { getCanvas } from "../../src/layout/geometry.js";
 import { findOverflow } from "../../src/layout/overflow.js";
 import { createLocalArtifactStore } from "../../src/artifacts/local-artifact-store.js";
-import { renderPresentation, type RenderFinalizedEvent } from "../../src/mcp/tools/render-presentation.js";
+import { renderPresentation, RenderPresentationOutputSchema, type RenderFinalizedEvent } from "../../src/mcp/tools/render-presentation.js";
+import { PptxValidationError } from "../../src/pptx/render-pptx.js";
 import { createFontThemeCatalog } from "../../src/theme/font-presets.js";
 import { loadDefaultTheme } from "../helpers/layout-fixtures.js";
 
@@ -140,15 +141,15 @@ describe("render_presentation pipeline", () => {
       },
     });
 
-    expect(result.status).toBe("completed");
+    expect(result.status).toBe("draft");
     expect(finalizations).toMatchObject([{
       jobId: result.jobId,
-      status: "completed",
+      status: "draft",
       cleanupOutcome: "succeeded",
       durationMs: expect.any(Number),
     }]);
     expect(JSON.stringify(finalizations)).not.toMatch(/source\.md|used-cache\.png|stage:|private\/tmp|Three key facts/u);
-    if (result.status !== "completed") return;
+    if (result.status !== "draft") return;
     expect(pptxPlan).toEqual(marpPlan);
     expect(pptxPlan?.slides).toHaveLength(2);
     expect(pptxPlan?.slides[1]).toMatchObject({ id: "appendix-image-1", layout: "image", imageIds: ["image-2"] });
@@ -158,6 +159,13 @@ describe("render_presentation pipeline", () => {
     expect(serializedMarp).toContain("assets/image-2.png");
     expect(result.marpBundle).toBeDefined();
     expect(result.previews).toHaveLength(2);
+    expect(result.deliveryStatus).toBe("unverified");
+    expect(result.validation.preview.status).toBe("ready");
+    const artifactBytes = await readFile(new URL(result.pptx.uri));
+    expect(result.validation.powerPoint).toEqual({
+      status: "not_run", artifactSha256: createHash("sha256").update(artifactBytes).digest("hex"),
+    });
+    expect(RenderPresentationOutputSchema.safeParse({ ...result, status: "completed" }).success).toBe(false);
     expect(result.validation.visualQaPassed).toBe(false);
     expect(result.imageUsage).toEqual([
       { assetId: "image-1", fileName: "used-cache.png", slideIds: ["slide-1"] },
@@ -189,7 +197,7 @@ describe("render_presentation pipeline", () => {
       },
     });
 
-    expect(result.status).toBe("completed");
+    expect(result.status).toBe("draft");
     expect(pptxFont).toBe("Noto Serif CJK TC");
     expect(marpFont).toBe("Noto Serif CJK TC");
   });
@@ -343,6 +351,18 @@ describe("render_presentation pipeline", () => {
     await localStore.close?.();
   });
 
+  it("blocks deterministic invalid PPTX once, preserves the affected part and publishes nothing", async () => {
+    const inspectPptx = vi.fn(async () => { throw new PptxValidationError("Invalid anchor mid", "ppt/slides/slide1.xml"); });
+    const { input, deps } = await setup(1, { inspectPptx });
+    const result = await renderPresentation(input, deps);
+    expect(result).toMatchObject({ status: "failed", failure: {
+      code: "PPTX_INVALID", stage: "verify", retryable: false,
+      affectedFileOrSlide: "ppt/slides/slide1.xml", message: "Invalid anchor mid",
+    } });
+    expect(inspectPptx).toHaveBeenCalledTimes(1);
+    expect(await readdir(outputRoot)).toEqual([]);
+  });
+
   it("returns exact layout issue IDs without calling either serializer", async () => {
     const { input, deps } = await setup(1);
     input.plan.slides[0]!.title = "很長的標題".repeat(25);
@@ -385,8 +405,8 @@ describe("render_presentation pipeline", () => {
       },
     });
 
-    expect(result.status).toBe("completed");
-    if (result.status !== "completed") return;
+    expect(result.status).toBe("draft");
+    if (result.status !== "draft") return;
     expect(Array.from(renderedPlan!.slides[1]!.title).length).toBeLessThanOrEqual(22);
     expect(result.imageUsage[1]).toMatchObject({ assetId: "image-2", fileName: longFileName, slideIds: ["appendix-image-1"] });
     const serializedMarp = (await readFile(new URL(result.marp.uri))).toString("utf8");
@@ -411,8 +431,8 @@ describe("render_presentation pipeline", () => {
       },
     });
 
-    expect(result.status).toBe("completed");
-    if (result.status !== "completed") return;
+    expect(result.status).toBe("draft");
+    if (result.status !== "draft") return;
     const appendixSlide = renderedPlan!.slides.find((slide) => slide.id === "appendix-image-1")!;
     expect(Array.from(appendixSlide.title).length).toBeLessThanOrEqual(22);
     expect(findOverflow(buildSlideLayout(appendixSlide, deps.theme), getCanvas(deps.theme))).toEqual([]);

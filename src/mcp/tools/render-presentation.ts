@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { UnsupportedMathError } from "../../content/math-text.js";
 import { constants } from "node:fs";
 import { lstat, open, readFile, realpath } from "node:fs/promises";
@@ -24,7 +24,7 @@ import { buildSlideLayout } from "../../layout/build-slide.js";
 import { getCanvas, type Theme } from "../../layout/geometry.js";
 import { findOverflow, type LayoutIssue } from "../../layout/overflow.js";
 import type { ResolvedPptxAsset } from "../../pptx/add-layout-object.js";
-import { inspectPptx, PptxRenderError, renderPptx, type PptxInspection } from "../../pptx/render-pptx.js";
+import { inspectPptx, PptxRenderError, PptxValidationError, renderPptx, type PptxInspection } from "../../pptx/render-pptx.js";
 import { serializeMarp } from "../../marp/serialize-marp.js";
 import { renderPreview, type PreviewIssue, type PreviewReport } from "../../preview/render-preview.js";
 import { ArtifactStoreError, MARP_BUNDLE_MIME, MARP_MIME, PPTX_MIME, PREVIEW_MIME, type ArtifactRef, type ArtifactStore } from "../../artifacts/artifact-store.js";
@@ -113,8 +113,14 @@ const inspectionSchema = z.object({
   relationshipsValid: z.boolean(),
 }).strict();
 
+const powerPointValidationSchema = z.object({
+  status: z.literal("not_run"),
+  artifactSha256: z.string().regex(/^[a-f0-9]{64}$/u),
+}).strict();
+
 const completedOrDraftSchema = z.object({
   status: z.enum(["completed", "draft"]),
+  deliveryStatus: z.literal("unverified"),
   jobId: z.string().uuid(),
   pptx: artifactRefSchema,
   marp: artifactRefSchema,
@@ -129,6 +135,7 @@ const completedOrDraftSchema = z.object({
   warnings: z.array(z.string()),
   validation: z.object({
     pptx: inspectionSchema,
+    powerPoint: powerPointValidationSchema,
     preview: z.object({
       status: z.enum(["ready", "draft"]),
       pageCount: z.number().int().nonnegative(),
@@ -143,11 +150,14 @@ const completedOrDraftSchema = z.object({
   if (output.imageUsage.length > 0 && !output.marpBundle) {
     ctx.addIssue({ code: "custom", path: ["marpBundle"], message: "A Marp bundle is required whenever image attachments are present." });
   }
-  if (output.status === "draft" && (output.previews.length > 0 || output.validation.preview.status !== "draft")) {
-    ctx.addIssue({ code: "custom", path: ["previews"], message: "Draft output cannot claim completed preview validation." });
+  if (output.status === "completed") {
+    ctx.addIssue({ code: "custom", path: ["status"], message: "Completed delivery requires native PowerPoint save/close/reopen verification; a preview cannot attest this." });
   }
-  if (output.status === "completed" && output.validation.preview.status !== "ready") {
-    ctx.addIssue({ code: "custom", path: ["validation", "preview"], message: "Completed output requires a ready preview render." });
+  if (output.validation.preview.status === "draft" && output.previews.length > 0) {
+    ctx.addIssue({ code: "custom", path: ["previews"], message: "Failed preview validation cannot publish preview references." });
+  }
+  if (output.validation.preview.status === "ready" && output.previews.length !== output.slideCount) {
+    ctx.addIssue({ code: "custom", path: ["previews"], message: "Ready preview requires one page per slide." });
   }
 });
 
@@ -168,6 +178,7 @@ const failedSchema = z.object({
 
 const successValidationSchema = z.object({
   pptx: inspectionSchema,
+  powerPoint: powerPointValidationSchema,
   preview: z.object({
     status: z.enum(["ready", "draft"]),
     pageCount: z.number().int().nonnegative(),
@@ -188,6 +199,7 @@ const failureValidationSchema = z.object({ issues: z.array(layoutIssueSchema) })
  */
 export const RenderPresentationOutputSchema = z.object({
   status: z.enum(["completed", "draft", "failed"]),
+  deliveryStatus: z.literal("unverified").optional(),
   jobId: z.string().uuid(),
   pptx: artifactRefSchema.optional(),
   marp: artifactRefSchema.optional(),
@@ -201,23 +213,26 @@ export const RenderPresentationOutputSchema = z.object({
 }).strict().superRefine((output, ctx) => {
   if (output.status === "failed") {
     if (!output.failure) ctx.addIssue({ code: "custom", path: ["failure"], message: "Failed output requires a typed failure." });
-    if (output.pptx || output.marp || output.marpBundle || output.previews?.length || output.slideCount !== undefined || output.imageUsage) {
+    if (output.deliveryStatus || output.pptx || output.marp || output.marpBundle || output.previews?.length || output.slideCount !== undefined || output.imageUsage) {
       ctx.addIssue({ code: "custom", path: ["status"], message: "Failed output cannot include successful artifact references." });
     }
     return;
   }
-  if (output.failure || !output.pptx || !output.marp || !output.previews || output.slideCount === undefined || !output.imageUsage || !output.validation || !("pptx" in output.validation)) {
+  if (output.deliveryStatus !== "unverified" || output.failure || !output.pptx || !output.marp || !output.previews || output.slideCount === undefined || !output.imageUsage || !output.validation || !("pptx" in output.validation)) {
     ctx.addIssue({ code: "custom", path: ["status"], message: "Completed or draft output requires verified artifact and validation fields." });
     return;
   }
   if (output.imageUsage.length > 0 && !output.marpBundle) {
     ctx.addIssue({ code: "custom", path: ["marpBundle"], message: "A Marp bundle is required whenever image attachments are present." });
   }
-  if (output.status === "draft" && (output.previews.length > 0 || output.validation.preview.status !== "draft")) {
-    ctx.addIssue({ code: "custom", path: ["previews"], message: "Draft output cannot claim completed preview validation." });
+  if (output.status === "completed") {
+    ctx.addIssue({ code: "custom", path: ["status"], message: "Completed delivery requires native PowerPoint save/close/reopen verification; a preview cannot attest this." });
   }
-  if (output.status === "completed" && output.validation.preview.status !== "ready") {
-    ctx.addIssue({ code: "custom", path: ["validation", "preview"], message: "Completed output requires a ready preview render." });
+  if (output.validation.preview.status === "draft" && output.previews.length > 0) {
+    ctx.addIssue({ code: "custom", path: ["previews"], message: "Failed preview validation cannot publish preview references." });
+  }
+  if (output.validation.preview.status === "ready" && output.previews.length !== output.slideCount) {
+    ctx.addIssue({ code: "custom", path: ["previews"], message: "Ready preview requires one page per slide." });
   }
 });
 
@@ -530,12 +545,19 @@ async function renderPresentationCore(
         pptxBytes = await (dependencies.renderPptx ?? renderPptx)(finalPlan, imageAssets, theme);
         inspection = await (dependencies.inspectPptx ?? inspectPptx)(pptxBytes);
         if (inspection.slideCount !== finalPlan.slides.length || !inspection.relationshipsValid || !inspection.contentTypeOverridesValid || !inspection.slideBoundsValid) {
-          throw new Error("PPTX structural inspection did not match the final presentation plan.");
+          throw new PptxValidationError("PPTX structural inspection did not match the final presentation plan.");
         }
         lastPptxError = undefined;
         break;
       } catch (error) {
         lastPptxError = error;
+        if (error instanceof PptxValidationError || (error instanceof PptxRenderError && error.code === "PPTX_INVALID")) {
+          return failure(jobId, "PPTX_INVALID", "verify", error.message, {
+            ...(error.partName ? { affectedFileOrSlide: error.partName } : {}),
+            userAction: "Do not deliver this file. Correct the reported package part or update the renderer; repeating the same export will not fix invalid XML.",
+            retryable: false,
+          });
+        }
         if (error instanceof PptxRenderError && error.code === "MATH_RENDER_FAILED") {
           return failure(jobId, "RENDER_FAILED", "verify", error.message, {
             ...(error.slideId ? { affectedFileOrSlide: error.slideId } : {}),
@@ -607,22 +629,25 @@ async function renderPresentationCore(
       for (let index = 0; index < previewPages.length; index++) {
         previewRefs.push(await dependencies.artifactStore.put(jobId, `preview-${index + 1}.png`, PREVIEW_MIME, previewPages[index]!));
       }
-      const isDraft = !preview || preview.status !== "ready" || Boolean(previewCaught);
+      const previewReady = preview?.status === "ready" && !previewCaught;
+      warnings.push("POWERPOINT_VERIFICATION_REQUIRED: This is an unverified draft. Open the original in Microsoft PowerPoint, save a new file, close and reopen it without a repair prompt before final delivery.");
       const output = {
-        status: isDraft ? "draft" as const : "completed" as const,
+        status: "draft" as const,
+        deliveryStatus: "unverified" as const,
         jobId,
         pptx: pptxRef,
         marp: marpRef,
         ...(bundleRef ? { marpBundle: bundleRef } : {}),
-        previews: isDraft ? [] : previewRefs,
+        previews: previewReady ? previewRefs : [],
         slideCount: finalPlan.slides.length,
         imageUsage: imageUsageForPlan(finalPlan),
         warnings,
         validation: {
           pptx: inspection,
+          powerPoint: { status: "not_run" as const, artifactSha256: createHash("sha256").update(pptxBytes).digest("hex") },
           preview: {
-            status: isDraft ? "draft" as const : "ready" as const,
-            pageCount: isDraft ? 0 : preview!.pageCount,
+            status: previewReady ? "ready" as const : "draft" as const,
+            pageCount: previewReady ? preview!.pageCount : 0,
             fontRequested: preview?.font.requested ?? theme.typography.fontFace,
             fontSelected: preview?.font.selected ?? null,
             fontSubstituted: preview?.font.substituted ?? false,
@@ -635,7 +660,7 @@ async function renderPresentationCore(
       published = true;
       return validatedOutput;
     } catch (error) {
-      return failure(jobId, "ARTIFACT_UNOPENABLE", "publish", "The verified deliverable could not be saved to the configured artifact store.", {
+      return failure(jobId, "ARTIFACT_UNOPENABLE", "publish", "The structurally checked draft could not be saved to the configured artifact store.", {
         userAction: "Check that the configured output directory is available and writable, then retry.",
         retryable: true,
       });

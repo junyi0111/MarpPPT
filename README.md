@@ -9,7 +9,7 @@
   <a href="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml"><img alt="Build and package validation" src="https://github.com/junyi0111/MarpPPT/actions/workflows/build.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2563EB.svg"></a>
   <img alt="Node.js 22 or later" src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=nodedotjs&logoColor=white">
-  <img alt="Package version 0.3.0" src="https://img.shields.io/badge/package-0.3.0-6D5EF7">
+  <img alt="Package version 0.3.1" src="https://img.shields.io/badge/package-0.3.1-6D5EF7">
   <a href="https://github.com/junyi0111/MarpPPT/commits/main"><img alt="Latest commit" src="https://img.shields.io/github/last-commit/junyi0111/MarpPPT?label=last%20update"></a>
 </p>
 
@@ -83,6 +83,8 @@ curl -fsSL https://raw.githubusercontent.com/junyi0111/MarpPPT/main/scripts/inst
 
 After `Installed.` appears, **quit and reopen Codex completely**, start a new conversation, attach your `.md` file and images, and invoke `$marp-ppt` with your presentation request. Confirm **MarpPPT** is enabled in the desktop app's Plugins view. MCP outputs are stored under `~/.marpppt/artifacts/` by default. Set `PPTX_OUTPUT_ROOT` to an absolute path before launching Codex to change the output location. You can set an absolute `MARPPPT_INSTALL_ROOT` before installation to keep the runtime and plugin source on an external drive; **keep that drive connected while using the plugin**.
 
+Generated files remain **unverified drafts** until Microsoft PowerPoint opens the original without repair, saves a new copy, and reopens that copy without repair. Preview success does not establish PowerPoint compatibility. The renderer blocks the known table/XML/workbook defects before publication; this is not a claim of complete Office schema coverage or native validation on every platform.
+
 ### Update an existing installation
 
 Run this command on the same Mac after closing active MarpPPT conversations:
@@ -133,7 +135,7 @@ npm ci
 npm run package:plugin -- --profile local
 ```
 
-This builds the TypeScript, applies the maintained presentation overrides, validates the plugin package, and writes `runtime/marpppt-0.3.0-local-candidate.zip`. The archive excludes `node_modules`, tests, TypeScript source, local runtime data, and environment files. Install dependencies after extracting it.
+This builds the TypeScript, validates the actual compiled table and committed theme, validates the plugin package, and writes `runtime/marpppt-0.3.1-local-candidate.zip`. The archive excludes `node_modules`, tests, TypeScript source, local runtime data, and environment files. Install dependencies after extracting it.
 
 Other development commands:
 

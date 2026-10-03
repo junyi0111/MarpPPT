@@ -56,7 +56,7 @@ export function repairPptxGenJsCompatibility(bytes: Uint8Array): Uint8Array {
       const drawings = Array.from(document.getElementsByTagNameNS(PRESENTATION_NS, "cNvPr"));
       const groups = new Map<string, typeof drawings>();
       for (const drawing of drawings) {
-        const id = drawing.getAttribute("id")!;
+        const id = String(Number(drawing.getAttribute("id")));
         groups.set(id, [...(groups.get(id) ?? []), drawing]);
       }
       let nextId = Math.max(0, ...drawings.map((node) => Number(node.getAttribute("id")))) + 1;
@@ -69,7 +69,7 @@ export function repairPptxGenJsCompatibility(bytes: Uint8Array): Uint8Array {
             && (frame as Element).getElementsByTagNameNS(DRAWING_NS, "tbl").length > 0;
         });
         const isConnected = ["stCxn", "endCxn"].some((name) => Array.from(document.getElementsByTagNameNS(DRAWING_NS, name))
-          .some((connection) => connection.getAttribute("id") === id));
+          .some((connection) => String(Number(connection.getAttribute("id"))) === id));
         if (group.length - tables.length > 1 || isConnected || !Number.isSafeInteger(nextId)) {
           throw new PptxValidationError(`Ambiguous duplicate drawing ID ${id} in ${part}`, part);
         }

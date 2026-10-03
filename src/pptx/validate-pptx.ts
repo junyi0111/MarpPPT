@@ -1,6 +1,6 @@
 import { posix as path } from "node:path";
 import type { PptxInspection } from "./render-pptx.js";
-import { PptxValidationError, parseOfficeXml, assertOfficeSemantics, decodeOfficeXml, unzipOfficeArchive, validateEmbeddedWorkbooks } from "./office-xml.js";
+import { PptxValidationError, parseOfficeXml, assertOfficeSemantics, decodeOfficeXml, unzipOfficeArchive, validateEmbeddedWorkbooks, validateOfficePackageGraph } from "./office-xml.js";
 export { PptxValidationError } from "./office-xml.js";
 
 const EMU_PER_INCH = 914_400;
@@ -301,6 +301,7 @@ function assertReferencesExist(slideXml: string, relationships: Relationship[], 
 
 export async function validatePptx(bytes: Uint8Array): Promise<PptxInspection> {
   const archive = unzipOfficeArchive(bytes);
+  validateOfficePackageGraph(archive);
   const entries = new Map(Object.entries(archive).filter(([name]) => !name.endsWith("/")));
   const requiredParts = ["[Content_Types].xml", "ppt/presentation.xml", "ppt/_rels/presentation.xml.rels", "_rels/.rels"];
   for (const part of requiredParts) if (!entries.has(part)) fail(`PPTX is missing required part ${part}`);

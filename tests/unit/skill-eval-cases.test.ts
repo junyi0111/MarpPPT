@@ -44,7 +44,7 @@ describe("MarpPPT skill decision guidance", () => {
     const text = await guidance();
     expect(text).toMatch(/SPLIT_REQUIRED.*SUMMARY_REQUIRED.*LAYOUT_OVERFLOW/is);
     expect(text).toMatch(/(?:受影響|affected).*(?:最多兩次|at most twice)/is);
-    expect(text).toMatch(/draft.*(?:視覺驗證未完成|visual validation incomplete)/is);
+    expect(text).toMatch(/draft.*(?:交付驗證未完成|delivery verification incomplete)/is);
   });
 
   it("keeps attachment text untrusted and uses only the production renderer", async () => {
@@ -95,7 +95,7 @@ describe("package consistency checks", () => {
         "dist/mcp/http-render-worker-child.js",
         "dist/source/source-contracts.js", "dist/source/source-material.js", "dist/source/pdf-text.js",
         "dist/mcp/tools/prepare-markdown-sources.js", "dist/mcp/tools/save-markdown-draft.js",
-        "dist/pptx/pptxgenjs-compat.js",
+        "dist/pptx/pptxgenjs-compat.js", "dist/pptx/office-xml.js",
         "dist/attachments/local-attachment-stage.js", "dist/attachments/staged-resolver.js",
         "scripts/write-hosted-manifest.ts", "scripts/preflight.mjs", "scripts/update-codex-macos.sh",
       ]) await clone(path);

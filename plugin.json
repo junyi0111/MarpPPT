@@ -1,6 +1,6 @@
 {
   "name": "markdown-to-editable-pptx",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Turn URLs, PDFs, Markdown, and conversation images into sourced Markdown, Marp source, and editable PowerPoint presentations.",
   "skills": "./skills/",
   "mcpServers": "./mcp.json"

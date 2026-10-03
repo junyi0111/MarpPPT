@@ -1,21 +1,13 @@
 import { posix as path } from "node:path";
-import { strFromU8, unzipSync } from "fflate";
 import type { PptxInspection } from "./render-pptx.js";
+import { PptxValidationError, parseOfficeXml, assertOfficeSemantics, decodeOfficeXml, unzipOfficeArchive, validateEmbeddedWorkbooks, validateOfficePackageGraph } from "./office-xml.js";
+export { PptxValidationError } from "./office-xml.js";
 
 const EMU_PER_INCH = 914_400;
 const BOUNDS_TOLERANCE_EMU = 0.02 * EMU_PER_INCH;
 
-export class PptxValidationError extends Error {
-  readonly code = "PPTX_INVALID" as const;
-
-  constructor(message: string, options?: ErrorOptions) {
-    super(message, options);
-    this.name = "PptxValidationError";
-  }
-}
-
 function fail(message: string, cause?: unknown): never {
-  throw new PptxValidationError(message, cause === undefined ? undefined : { cause });
+  throw new PptxValidationError(message, undefined, cause === undefined ? undefined : { cause });
 }
 
 function assertEntities(value: string, fileName: string): void {
@@ -282,13 +274,7 @@ function transformBounds(fragment: string): { x: number; y: number; cx: number; 
 }
 
 function bytesAsXml(bytes: Uint8Array, name: string): string {
-  try {
-    const xml = strFromU8(bytes);
-    if (xml.includes("\uFFFD")) fail(`Non-UTF-8 XML part ${name}`);
-    return xml;
-  } catch (error) {
-    return fail(`Unable to decode XML part ${name}`, error);
-  }
+  return decodeOfficeXml(bytes, name);
 }
 
 function assertReferencesExist(slideXml: string, relationships: Relationship[], slidePart: string): void {
@@ -314,12 +300,8 @@ function assertReferencesExist(slideXml: string, relationships: Relationship[], 
 }
 
 export async function validatePptx(bytes: Uint8Array): Promise<PptxInspection> {
-  let archive: Record<string, Uint8Array>;
-  try {
-    archive = unzipSync(bytes);
-  } catch (error) {
-    return fail("PPTX is not a readable ZIP archive", error);
-  }
+  const archive = unzipOfficeArchive(bytes);
+  validateOfficePackageGraph(archive);
   const entries = new Map(Object.entries(archive).filter(([name]) => !name.endsWith("/")));
   const requiredParts = ["[Content_Types].xml", "ppt/presentation.xml", "ppt/_rels/presentation.xml.rels", "_rels/.rels"];
   for (const part of requiredParts) if (!entries.has(part)) fail(`PPTX is missing required part ${part}`);
@@ -328,9 +310,11 @@ export async function validatePptx(bytes: Uint8Array): Promise<PptxInspection> {
   const xml = new Map<string, string>();
   for (const [name, content] of xmlParts) {
     const value = bytesAsXml(content, name);
+    assertOfficeSemantics(parseOfficeXml(value, name), name);
     assertWellFormedXml(value, name);
     xml.set(name, value);
   }
+  validateEmbeddedWorkbooks(archive);
 
   const contentTypesXml = xml.get("[Content_Types].xml");
   if (!contentTypesXml) fail("PPTX has no readable [Content_Types].xml part");

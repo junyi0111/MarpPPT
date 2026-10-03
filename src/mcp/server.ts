@@ -32,10 +32,10 @@ export interface McpServerDependencies extends PresentationServerDependencies {
 }
 
 export function createMcpServer(dependencies: McpServerDependencies): McpServer {
-  const server = new McpServer({ name: "marpppt", version: "0.3.0" });
+  const server = new McpServer({ name: "marpppt", version: "0.3.1" });
   server.registerTool("render_presentation", {
     title: "Render editable PowerPoint and Marp artifacts",
-    description: "Validate authorized Markdown and image attachments, render an editable PPTX and matching Marp source, and return verified artifact references.",
+    description: "Validate authorized Markdown and image attachments, render an editable PPTX and matching Marp source, and return structurally checked draft artifact references. Native PowerPoint save/close/reopen verification is still required for final delivery.",
     inputSchema: RenderPresentationInputSchema,
     outputSchema: RenderPresentationOutputSchema,
     annotations: { openWorldHint: false, destructiveHint: false },
@@ -47,7 +47,7 @@ export function createMcpServer(dependencies: McpServerDependencies): McpServer 
         : await renderPresentation(input, dependencies);
       const text = output.status === "failed"
         ? `${output.failure.code}: ${output.failure.message}`
-        : `Presentation ${output.status}: ${output.slideCount} slides. Visual QA passed: false.`;
+        : `Presentation ${output.status}: ${output.slideCount} slides. Delivery unverified; PowerPoint verification not run. Visual QA passed: false.`;
       return {
         content: [{ type: "text" as const, text }],
         structuredContent: output as Record<string, unknown>,

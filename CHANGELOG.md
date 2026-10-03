@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.1] - 2026-10-03
+
+### Fixed
+
+- Emit legal centered table cells (`anchor="ctr"`) using typed `valign: "middle"` options.
+- Prevent dependency-generated table drawing ID collisions at different slide positions without guessing connector targets.
+- Repair the confirmed PptxGenJS 4.0.1 trailing apostrophe in generated chart workbook ranges; preserve editable native charts and tables.
+- Reject malformed XML, illegal characters, invalid table enums, duplicate drawing IDs, and corrupt embedded XLSX ranges or relationship targets before publishing artifacts.
+- Bound Office archive expansion and return deterministic `PPTX_INVALID` errors once, with the affected part when available.
+
+### Changed
+
+- Generation now returns `status: "draft"` and `deliveryStatus: "unverified"` even when previews are ready. `validation.powerPoint` reports `not_run` and the original artifact SHA-256; clients must not treat preview success as final delivery.
+- Require repair-free first opening in PowerPoint, then save/close/reopen and content-preservation checks before final delivery. A repair prompt fails the export gate.
+- Build validation renders and inspects a real compiled native table instead of searching compiled source for an alignment string. Regression tests run in CI.
+
 ## [0.3.0] - 2026-10-01
 
 ### Added

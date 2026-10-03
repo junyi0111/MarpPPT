@@ -57,6 +57,7 @@ const inspection = {
 };
 const output = {
   status: "draft",
+  deliveryStatus: "unverified",
   jobId,
   pptx: { fileName: artifacts[0].fileName, mimeType: artifacts[0].mimeType, uri: pathToFileURL(join(jobOutput, artifacts[0].fileName)).href, expiresAt: null },
   marp: { fileName: artifacts[1].fileName, mimeType: artifacts[1].mimeType, uri: pathToFileURL(join(jobOutput, artifacts[1].fileName)).href, expiresAt: null },
@@ -66,6 +67,7 @@ const output = {
   warnings: [],
   validation: {
     pptx: inspection,
+    powerPoint: { status: "not_run", artifactSha256: createHash("sha256").update(artifacts[0].bytes).digest("hex") },
     preview: { status: "draft", pageCount: 0, fontRequested: "Arial", fontSelected: null, fontSubstituted: false, issues: [] },
     visualQaPassed: false,
   },

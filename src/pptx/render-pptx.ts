@@ -13,7 +13,8 @@ import { buildSlideLayout, type LayoutObject } from "../layout/build-slide.js";
 import { getCanvas, type Theme } from "../layout/geometry.js";
 import { findOverflow, type LayoutIssue } from "../layout/overflow.js";
 import { addLayoutObject, type LayoutObjectContext, type PptxApi, type PptxSlideApi, type ResolvedPptxAsset } from "./add-layout-object.js";
-import { repairPptxGenJsSlideMasterOverrides } from "./pptxgenjs-compat.js";
+import { repairPptxGenJsCompatibility } from "./pptxgenjs-compat.js";
+import { assertOfficeText } from "./office-xml.js";
 import { renderMathImage } from "./render-math-image.js";
 import { PptxValidationError, validatePptx } from "./validate-pptx.js";
 
@@ -26,17 +27,19 @@ export class PptxRenderError extends Error {
   constructor(
     message: string,
     readonly code: PptxRenderErrorCode,
-    options: { assetId?: string; slideId?: string; issues?: Array<LayoutIssue | ValidationIssue> } = {},
+    options: { assetId?: string; slideId?: string; partName?: string; issues?: Array<LayoutIssue | ValidationIssue> } = {},
   ) {
     super(message);
     this.name = "PptxRenderError";
     this.assetId = options.assetId;
     this.slideId = options.slideId;
+    this.partName = options.partName;
     this.issues = options.issues;
   }
 
   readonly assetId?: string;
   readonly slideId?: string;
+  readonly partName?: string;
   readonly issues?: Array<LayoutIssue | ValidationIssue>;
 }
 
@@ -202,6 +205,18 @@ export async function renderPptx(plan: PresentationPlan, assets: ResolvedPptxAss
     });
   }
 
+  // Validate before UTF-8 encoding: an unpaired surrogate otherwise becomes U+FFFD.
+  const checkText = (value: unknown, field: string): void => {
+    if (typeof value === "string") assertOfficeText(value, field);
+    else if (Array.isArray(value)) value.forEach((item, i) => checkText(item, `${field}[${i}]`));
+    else if (value && typeof value === "object") Object.entries(value).forEach(([key, item]) => checkText(item, `${field}.${key}`));
+  };
+  try { checkText(checkedPlan, "plan"); assertOfficeText(fontFace(theme), "theme.fontFace"); }
+  catch (error) {
+    if (error instanceof PptxValidationError) throw new PptxRenderError(error.message, "PPTX_INVALID", { partName: error.partName });
+    throw error;
+  }
+
   const layouts = layoutsForPlan(checkedPlan, theme);
   const layoutIssues = layouts.flatMap((layout) => layout.issues);
   if (layoutIssues.length > 0) {
@@ -251,13 +266,13 @@ export async function renderPptx(plan: PresentationPlan, assets: ResolvedPptxAss
       : generated instanceof ArrayBuffer ? new Uint8Array(generated)
         : undefined;
     if (!serialized) throw new Error("PptxGenJS returned a non-binary output");
-    const bytes = repairPptxGenJsSlideMasterOverrides(serialized);
+    const bytes = repairPptxGenJsCompatibility(serialized);
     await validatePptx(bytes);
     return bytes;
   } catch (error) {
     if (error instanceof PptxRenderError) throw error;
     const message = error instanceof PptxValidationError ? error.message : "PPTX could not be serialized or validated.";
-    throw new PptxRenderError(message, "PPTX_INVALID");
+    throw new PptxRenderError(message, "PPTX_INVALID", { ...(error instanceof PptxValidationError && error.partName ? { partName: error.partName } : {}) });
   }
 }
 

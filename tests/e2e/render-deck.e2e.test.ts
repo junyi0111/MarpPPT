@@ -83,8 +83,8 @@ describe("eight-slide end-to-end acceptance", () => {
     }
     const { result, plan, request } = await runFixture();
     expect(request).toEqual({ audience: "managers", targetSlideCount: 8, summaryStrength: "moderate" });
-    expect(result.status, JSON.stringify(result)).toBe("completed");
-    if (result.status !== "completed") return;
+    expect(result.status, JSON.stringify(result)).toBe("draft");
+    if (result.status !== "draft") return;
     expect(result.slideCount).toBe(8);
     expect(result.imageUsage).toEqual([
       { assetId: "image-1", fileName: "capacity.png", slideIds: ["capacity"] },

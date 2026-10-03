@@ -24,19 +24,23 @@
 
 1. 只用 MarpPPT 的 `render_presentation` 產生 `.marp.md` 與可編輯 `.pptx`。Presentations 的設計內容已整理在本套件文件內；其他簡報工具不得替代本工具建立或編輯此 PPTX。
 2. 檢查 `validation.pptx.contentTypeOverridesValid`、`validation.pptx.relationshipsValid`、`validation.pptx.slideBoundsValid` 均為 `true`。套件 validator 必須確認 `[Content_Types].xml` 每個 `<Override>` 的 `PartName` 都映射到 ZIP 內實際存在的 part，且所有套件內 `.rels` 關係目標都存在。外部 URL 關係不屬於 ZIP 內部 part。
-3. ZIP 驗證或版面結構檢查任一失敗，修正來源計畫後重產；不可把失敗檔標為完成。
+3. 檢查標準 XML 語法與合法字元、表格 `anchor`／`horzOverflow` 的合法列舉、頁內繪圖 ID 唯一性與連線目標、內嵌 XLSX 的 A1 範圍及內部關係。ZIP 解壓上限為 256 MiB／4096 項；单一 XLSX 32 MiB，最多 60 本、合計 64 MiB。超限或格式錯誤皆阻擋輸出，不刪資料求通過。此為已知錯誤及封裝檢查，不代表完整 Office XML 結構描述驗證。
+4. `PPTX_INVALID` 是確定性的結構錯誤，帶有部件資訊且不自動重試相同輸入。需修正內容或渲染器後再產生。
+5. ZIP 驗證或版面結構檢查任一失敗，修正來源計畫後重產；不可把失敗檔標為完成。
 
 ## PowerPoint CUA 儲存與重開關卡
 
 此關卡每份簡報都要執行，不能用 ZIP 檢查或 LibreOffice 預覽代替。使用 Codex 執行環境的 `unified-computer-use` 實際控制 Microsoft PowerPoint：
 
 1. 透過宿主支援的檔案交接方式，在 PowerPoint 開啟 MarpPPT 產出的 PPTX。確認開啟時是否有修復提示。
-2. 若有修復提示，使用 PowerPoint 的修復／開啟流程，檢查修復後內容，再另存成新的 `*-PowerPoint-verified.pptx`。若沒有提示，也將原始匯出檔另存成該新驗證檔。不要覆寫 MarpPPT 原始匯出檔。
+2. 首次開啟若有修復提示，該次匯出失敗；保留原檔與診斷並修正渲染器後重產，不能把修復後另存視為正常匯出通過。首次開啟沒有提示時，另存成新的 `*-PowerPoint-verified.pptx`。不要覆寫 MarpPPT 原始匯出檔。
 3. 關閉該檔，再由 PowerPoint 重新開啟剛儲存的驗證檔。確認沒有修復提示、頁數與預期一致，並抽查文字、圖形、圖片、裁切和重疊。
-4. 只將這份重新開啟成功的 PowerPoint 儲存版標示為通過並交付。
+4. 比較另存前後頁數、文字、圖片與原生表格／圖表是否保留，記錄原始及驗證檔 SHA-256、驗證檔路徑及 PowerPoint 版本。只將這份重新開啟成功的 PowerPoint 儲存版標示為通過並交付。
 5. 若 CUA、Microsoft PowerPoint 或檔案交接不可用，回報「PowerPoint 重開驗證：未通過／未執行」與具體阻礙。原始 MarpPPT PPTX 可作為「未驗證草稿」提供，但不能稱為已通過或已修復。
 
-CUA 是 Codex 執行環境內的操作能力，不是 MarpPPT MCP 內部的修復器，也不要求使用者安裝另一個簡報 Plugin；本 Skill 必須主動呼叫它完成上述步驟。`validation.visualQaPassed` 是 MarpPPT 預覽欄位，不代表 PowerPoint 已重開驗證。
+若另存視窗無法使用，可先建立不覆寫原檔的新副本，再用 PowerPoint 開啟該副本並原生儲存。必須確認檔案確實經 PowerPoint 寫入（檔案指紋改變），再執行關閉、重開及內容保留檢查；單純複製檔案不算原生存檔驗證。交付紀錄應寫明實際採用的方法與另存視窗的阻礙。
+
+CUA 是 Codex 執行環境內的操作能力，不是 MarpPPT MCP 內部的修復器，也不要求使用者安裝另一個簡報 Plugin；本 Skill 必須主動呼叫它完成上述步驟。MCP 總是回傳 `draft`／`unverified`，`validation.powerPoint.status` 固定 `not_run`；此欄不可由模型憑預覽修改成通過。實際宿主驗證結果與交付檔指紋另行記錄。`validation.visualQaPassed` 是 MarpPPT 預覽欄位，不代表 PowerPoint 已重開驗證。
 
 ## 最終交付紀錄
 

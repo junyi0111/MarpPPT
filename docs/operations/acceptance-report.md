@@ -2,6 +2,10 @@
 
 This repository contains the local MarpPPT plugin package and its current end-to-end acceptance limits. A successful build or structurally valid ZIP is not, by itself, evidence that a Codex conversation can transfer attachments or that Microsoft PowerPoint opens the resulting file without repair.
 
+## 0.3.1 repair-prevention verification
+
+The current release was checked on 2026-10-03: 356 automated tests, type checking, package validation and a production dependency audit passed. The extracted package's MCP produced an 11-slide synthetic deck that opened without repair in PowerPoint for Mac 16.113.2, was natively saved to a new copy, closed and reopened without repair. Native tables/charts, slide text, worksheet values and image bytes were preserved. See [the 0.3.1 evidence and limits](pptx-repair-prevention-0.3.1.md). The earlier installation and host-handoff limits below still apply unless explicitly superseded.
+
 ## Verified in local candidate work
 
 - The production MCP can render Markdown and image attachments supplied through the local staging path.
@@ -27,7 +31,7 @@ The earlier release checks apply to the local `v0.2.1` candidate based on commit
 
 ## Dependency security status
 
-The production dependency tree resolves `image-size@2.0.4` through the `pptxgenjs@4.0.1` override. A fresh `npm audit --omit=dev --audit-level=high` attempt on 2026-09-26 could not reach `registry.npmjs.org` (`ENOTFOUND`), so the current audit status is unknown. Re-run the audit from a network-enabled environment before publishing; do not report it as passed based only on the installed dependency version.
+The production dependency tree resolves `image-size@2.0.4` through the `pptxgenjs@4.0.1` override. The 2026-09-26 audit could not reach `registry.npmjs.org` (`ENOTFOUND`). A fresh `npm audit --omit=dev` on 2026-10-03 reached the registry and reported zero vulnerabilities for 0.3.1. This is a dated result; re-run the registry audit for each release.
 
 ## Release rule
 

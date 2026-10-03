@@ -56,13 +56,16 @@ Codex 的明確呼叫是 `$marp-ppt`。一般「把 Markdown 做成 PPTX／Power
 - `SOURCE_MISSING`：請補 `.md`；`ATTACHMENT_UNREADABLE`：指出需宿主授權且可讀的原附件，重新取得／暫存；`INPUT_LIMIT_EXCEEDED`：指出上限並請減少附件或內容；`IMAGE_INVALID`：請換有效 PNG/JPEG。缺檔、矛盾或無法兼顧的硬要求先詢問，不能用猜測完成。
 - `REFERENCE_MISSING`、`PLAN_INVALID`：修正受影響的來源引用、manifest、圖片映射或計畫欄位再送出。`SPLIT_REQUIRED`、`SUMMARY_REQUIRED`、`LAYOUT_OVERFLOW`：依回傳的受影響頁與物件，拆頁、縮短可摘要內容或換受控版型；保留必留事實與所有明確要求保留的數字。對受影響內容最多兩次有目標的計畫修訂與重試，仍失敗就回報未完成，不用縮小字體硬塞。
 - `FONT_GLYPH_MISSING`：把它視為阻擋交付的預覽錯誤；即使 PDF 文字層仍能擷取 CJK，也要修正實際字型或改用已確認可渲染的字型後重試。`FONT_GLYPH_CHECK_UNAVAILABLE`：只能交付未驗證草稿，先補 `pdftotext` 或等效的本機 PDF 文字檢查工具。
+- `PPTX_INVALID`：立即停止交付，保留 `failure.affectedFileOrSlide` 指出的 XML／內嵌工作簿部件及原始錯誤；同輸入不得盲目重試。需修正渲染器或內容後重新產生，不能靠 PowerPoint 刪除損壞內容當作正常匯出通過。
 - `RENDER_FAILED`：依 `retryable` 和 `userAction` 做至多一次同輸入重試，仍失敗就停止；`ARTIFACT_UNOPENABLE`：檢查輸出儲存依賴，不能回報檔案已可開啟。任何未列出的失敗碼，也按 `stage`、`retryable` 和 `userAction` 告知具體下一步，不宣稱完成。
 - 公式渲染錯誤會以 `RENDER_FAILED` 指出公式物件及 LaTeX 錯誤，並設 `retryable: false`；修正該公式後再送，不用相同輸入盲目重試。
 
-成功時先確認 `validation.pptx.contentTypeOverridesValid === true`、`validation.pptx.relationshipsValid === true` 及 `validation.pptx.slideBoundsValid === true`。封裝驗證必須確認 `[Content_Types].xml` 的每筆 `<Override PartName>` 都指向 ZIP 內存在的項目，並確認每個內部 `.rels` 目標都存在；任何一項失敗都不得交付為完成版。
+成功時先確認 `validation.pptx.contentTypeOverridesValid === true`、`validation.pptx.relationshipsValid === true` 及 `validation.pptx.slideBoundsValid === true`。MCP 生成輸出固定是 `status: "draft"`、`deliveryStatus: "unverified"`，即使 `validation.preview.status` 是 `ready` 也一樣；`validation.powerPoint.status: "not_run"` 和 `artifactSha256` 只標示尚未執行及待檢查檔案的指紋。封裝驗證也會檢查表格屬性列舉、物件 ID 唯一性、XML 字元與內嵌 XLSX 範圍／關係。封裝驗證必須確認 `[Content_Types].xml` 的每筆 `<Override PartName>` 都指向 ZIP 內存在的項目，並確認每個內部 `.rels` 目標都存在；任何一項失敗都不得交付為完成版。
 
-接著必須用 Codex 內建 `unified-computer-use`（CUA）實際操作 Microsoft PowerPoint：開啟 MarpPPT 輸出的 PPTX、檢查首次開啟是否出現修復提示；若出現，按 PowerPoint 提供的修復流程開啟並另存為新的 `*-PowerPoint-verified.pptx`；若未出現，也仍須另存為新的驗證檔。關閉 PowerPoint，再重新開啟該驗證檔，確認沒有修復提示、頁數正確，並抽查圖文、裁切、重疊與附件圖片。交付重新開啟通過的 PowerPoint 儲存版本。CUA 是 Codex 執行環境提供的操作能力，由 MarpPPT 工作流程呼叫；不需要另裝使用者 Plugin。若 PowerPoint、CUA 或檔案交接不可用，明確標為「PowerPoint 重開驗證：未通過／未執行」，寫出阻礙及下一步，原始匯出檔只能標成未驗證草稿，不能冒稱已驗證完成。
+接著必須用 Codex 內建 `unified-computer-use`（CUA）實際操作 Microsoft PowerPoint：開啟 MarpPPT 輸出的 PPTX、檢查首次開啟是否出現修復提示；首次開啟若出現修復提示，視為匯出失敗：保留原始檔及錯誤資訊，停止正常交付並修正渲染器後重產，不可把修復後能開啟當作原始匯出通過。首次開啟沒有修復提示時，另存為新的 `*-PowerPoint-verified.pptx`。關閉 PowerPoint，再重新開啟該驗證檔，確認沒有修復提示、頁數正確，並抽查圖文、裁切、重疊與附件圖片。交付重新開啟通過的 PowerPoint 儲存版本。CUA 是 Codex 執行環境提供的操作能力，由 MarpPPT 工作流程呼叫；不需要另裝使用者 Plugin。若 PowerPoint、CUA 或檔案交接不可用，明確標為「PowerPoint 重開驗證：未通過／未執行」，寫出阻礙及下一步，原始匯出檔只能標成未驗證草稿，不能冒稱已驗證完成。
+
+記錄原始檔 SHA-256、驗證檔完整路徑與 SHA-256、驗證用 PowerPoint 版本、首次開啟及重開結果；確認另存後的頁數、文字、原生表格／圖表及圖片均保留。模型不得自行把 MCP 的 `not_run` 改成 `passed`，實際宿主驗證另列於交付紀錄。
 
 最後回報 ZIP Override 與關係目標檢查、首次開啟是否修復、PowerPoint 另存及關閉重開結果、視覺抽查結果。`validation.visualQaPassed` 只描述套件預覽狀態，不可取代 PowerPoint CUA 驗證。完整清單見 [production-quality.md](references/production-quality.md)。
 
-只有 ZIP 封裝關卡與 PowerPoint CUA 關卡都通過，才可標示任務完成。主要 PPTX 交付物是 PowerPoint 另存並關閉重開成功的 `*-PowerPoint-verified.pptx`；同時交付 `marp.uri`、實際頁數、`imageUsage`（每張原檔名及使用頁）、警告與預覽狀態。有圖片時也交付 `marpBundle.uri`，讓 Markdown 的相對圖片路徑可用。若 CUA 或宿主檔案交接失敗，原始 `pptx.uri` 只能標成「未驗證草稿」，並明確回報交付尚未通過。`draft` 只能標成「視覺驗證未完成」草稿；`validation.visualQaPassed: false` 不等於 PowerPoint 重開驗證通過。未經人工檢視預覽，不宣稱完全無裁切或重疊。
+只有 ZIP 封裝關卡與 PowerPoint CUA 關卡都通過，才可標示任務完成。主要 PPTX 交付物是 PowerPoint 另存並關閉重開成功的 `*-PowerPoint-verified.pptx`；同時交付 `marp.uri`、實際頁數、`imageUsage`（每張原檔名及使用頁）、警告與預覽狀態。有圖片時也交付 `marpBundle.uri`，讓 Markdown 的相對圖片路徑可用。若 CUA 或宿主檔案交接失敗，原始 `pptx.uri` 只能標成「未驗證草稿」，並明確回報交付尚未通過。`draft` 表示「交付驗證未完成」；有預覽不表示 PowerPoint 已驗證。`validation.visualQaPassed: false` 不等於 PowerPoint 重開驗證通過。未經人工檢視預覽，不宣稱完全無裁切或重疊。

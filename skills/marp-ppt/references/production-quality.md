@@ -38,6 +38,8 @@
 4. 比較另存前後頁數、文字、圖片與原生表格／圖表是否保留，記錄原始及驗證檔 SHA-256、驗證檔路徑及 PowerPoint 版本。只將這份重新開啟成功的 PowerPoint 儲存版標示為通過並交付。
 5. 若 CUA、Microsoft PowerPoint 或檔案交接不可用，回報「PowerPoint 重開驗證：未通過／未執行」與具體阻礙。原始 MarpPPT PPTX 可作為「未驗證草稿」提供，但不能稱為已通過或已修復。
 
+若另存視窗無法使用，可先建立不覆寫原檔的新副本，再用 PowerPoint 開啟該副本並原生儲存。必須確認檔案確實經 PowerPoint 寫入（檔案指紋改變），再執行關閉、重開及內容保留檢查；單純複製檔案不算原生存檔驗證。交付紀錄應寫明實際採用的方法與另存視窗的阻礙。
+
 CUA 是 Codex 執行環境內的操作能力，不是 MarpPPT MCP 內部的修復器，也不要求使用者安裝另一個簡報 Plugin；本 Skill 必須主動呼叫它完成上述步驟。MCP 總是回傳 `draft`／`unverified`，`validation.powerPoint.status` 固定 `not_run`；此欄不可由模型憑預覽修改成通過。實際宿主驗證結果與交付檔指紋另行記錄。`validation.visualQaPassed` 是 MarpPPT 預覽欄位，不代表 PowerPoint 已重開驗證。
 
 ## 最終交付紀錄

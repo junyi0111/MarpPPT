@@ -65,7 +65,7 @@ Files: package manifests, changelog, package/build preference checks, README and
 - [x] Package 0.3.1 and generate a mixed table/chart/diagram/image/CJK deck from the extracted package through MCP.
 - [x] Open the raw output in PowerPoint with no repair, save a new copy, close and reopen; compare slide/text/media/chart-data preservation.
 - [x] Update installed Plugin via supported installation workflow; document restart and user update command.
-- [ ] Publish only after validation; retain explicit platform and native-check limitations.
+- [x] Publish only after validation; retain explicit platform and native-check limitations.
 
 ## Execution evidence
 
@@ -75,3 +75,4 @@ Files: package manifests, changelog, package/build preference checks, README and
 - PowerPoint for Mac 16.113.2 opened raw output and reopened its saved copy without repair. Save As was disabled, so the validated alternate was a new byte-identical copy followed by native Save; changed SHA and exact content comparisons prove a real native write.
 - Installed `markdown-to-editable-pptx@personal` refreshed through supported Codex CLI to cache version 0.3.1. Original source retained as a rollback backup.
 - Public synthetic evidence and platform limits: [validation report](../../operations/pptx-repair-prevention-0.3.1.md).
+- Validated patch published as [PR #2](https://github.com/junyi0111/MarpPPT/pull/2); main merge and release remain gated on GitHub CI.

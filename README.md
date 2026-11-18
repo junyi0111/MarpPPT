@@ -110,7 +110,7 @@ MarpPPT runs a local stdio MCP server. It needs Node.js 22 or later, local acces
 | --- | --- | --- |
 | **Codex** | Follow the macOS desktop steps above and invoke `$marp-ppt`. See [OpenAI plugin packaging guidance](https://developers.openai.com/plugins/build/plugins). | **Primary target.** The desktop installer covers Node.js and the bundled Codex executable. Conversation attachment handoff and opening returned files in Codex still depend on host verification. |
 | **OpenCode** | Configure the MCP server in `opencode.json` and load the Skill from an Agent Skills location. See the [MCP](https://opencode.ai/docs/en/mcp-servers/) and [Skills](https://opencode.ai/docs/skills) guides. | Requires OpenCode-specific setup. The current Skill's attachment and computer-use steps are Codex-specific, so the full workflow is not supported as-is. |
-| **Claude Code** | Use Claude Code's own plugin, MCP, and Skill conventions. See its [plugin](https://code.claude.com/docs/en/plugins), [MCP](https://code.claude.com/docs/en/mcp), and [Skills](https://code.claude.com/docs/en/skills) guides. | Not a directly installable Claude Code plugin yet; it needs a Claude Code manifest and a host-adapted Skill. |
+| **Claude Code** | Install the host-neutral skill: `npm run package:agensi`, unzip `runtime/marp-ppt-skill-<version>.zip` into `~/.claude/skills/`, then run `bash marp-ppt/scripts/setup.sh`. Or load this repo as a plugin (`.claude-plugin/plugin.json`). | Skill and CLI verified from a clean unzip on macOS (draft output; no PowerPoint or LibreOffice check run). URL/PDF-to-Markdown and the PowerPoint reopen gate stay Codex-only. |
 
 | Operating system | Status |
 | --- | --- |

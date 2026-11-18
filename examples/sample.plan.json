@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "title": "Quarterly Update",
+  "language": "en",
+  "themeId": "default",
+  "sourceDigest": "8b37493ee857eb7c9616aa510a8e0e46108f18a75000ec0d899a7760f9689eb8",
+  "slides": [
+    { "id": "cover", "title": "Quarterly Update", "layout": "cover", "imageIds": [] },
+    { "id": "highlights", "title": "Highlights", "layout": "bullets",
+      "blocks": [
+        { "id": "h1", "text": "Revenue grew 12% quarter over quarter" },
+        { "id": "h2", "text": "Support response time dropped from 48 hours to 24 hours" },
+        { "id": "h3", "text": "Two pilots start next month" }
+      ], "imageIds": [], "sourceRefs": ["## Highlights"] },
+    { "id": "metrics", "title": "Metrics", "layout": "table",
+      "table": { "columns": ["Metric", "Q2", "Q3"], "rows": [["Revenue (USD M)", "4.2", "4.7"], ["Response time (h)", "48", "24"]] },
+      "imageIds": [], "sourceRefs": ["## Metrics"] }
+  ],
+  "imageAssetIds": [],
+  "assetManifest": []
+}

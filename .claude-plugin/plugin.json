@@ -1,0 +1,8 @@
+{
+  "name": "marpppt",
+  "version": "0.3.1",
+  "description": "Turn Markdown and images into editable PowerPoint decks and Marp source.",
+  "author": { "name": "MarpPPT contributors" },
+  "license": "MIT",
+  "skills": "./skills-portable/"
+}

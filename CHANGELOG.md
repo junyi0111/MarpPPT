@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Host-neutral Agent Skill (`skills-portable/marp-ppt`) with a bundled `render-deck` CLI (`inspect` and `render`) that runs the renderer without an MCP host, so it works in Claude Code, Cursor, OpenCode and other Agent Skills hosts.
+- `npm run package:agensi` builds a self-contained `marp-ppt-skill-<version>.zip` (SKILL.md, references, examples, setup script, prebuilt engine).
+- Claude Code plugin manifest (`.claude-plugin/plugin.json`).
+
 ## [0.3.1] - 2026-10-03
 
 ### Fixed

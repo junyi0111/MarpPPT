@@ -15,7 +15,8 @@
     "lint": "tsc --noEmit",
     "package:validate": "node --import tsx scripts/validate-package.ts",
     "preflight": "node scripts/preflight.mjs",
-    "package:plugin": "npm run build && node --import tsx scripts/package-plugin.ts"
+    "package:plugin": "npm run build && node --import tsx scripts/package-plugin.ts",
+    "package:agensi": "npm run build && node scripts/package-agensi.mjs"
   },
   "license": "MIT",
   "type": "module",
